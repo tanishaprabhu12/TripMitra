@@ -65,6 +65,11 @@ function CreateTrip() {
       budget: Number(budget),
     };
 
+    // Reset members when creating a new trip
+localStorage.removeItem(
+  `tripMembers_${currentUser.id}`
+);
+
 
     // Save trip for this specific user
     localStorage.setItem(

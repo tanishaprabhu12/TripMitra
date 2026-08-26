@@ -3,188 +3,329 @@ import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 
 function Budget() {
+
+  // =========================================
+  // CURRENT USER
+  // =========================================
+
   const currentUser = JSON.parse(
     localStorage.getItem("currentUser") || "null"
   );
 
-  const [trip, setTrip] = useState(null);
-  const [expenses, setExpenses] = useState([]);
-  const [itinerary, setItinerary] = useState([]);
+  const userId = currentUser?.id || "guest";
 
-  useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
-
-    const savedTrip = localStorage.getItem(
-      `trip_${currentUser.id}`
-    );
-
-    const savedExpenses = localStorage.getItem(
-      `tripExpenses_${currentUser.id}`
-    );
-
-    const savedItinerary = localStorage.getItem(
-      `tripItinerary_${currentUser.id}`
-    );
-
-    setTrip(
-      savedTrip
-        ? JSON.parse(savedTrip)
-        : null
-    );
-
-    setExpenses(
-      savedExpenses
-        ? JSON.parse(savedExpenses)
-        : []
-    );
-
-    setItinerary(
-      savedItinerary
-        ? JSON.parse(savedItinerary)
-        : []
-    );
-  }, [currentUser?.id]);
 
   // =========================================
   // BUDGET
   // =========================================
 
-  const budget =
-    Number(trip?.budget || 0);
+  const [budget, setBudget] = useState(() => {
 
-  // Actual expenses
-  const expenseSpending = expenses.reduce(
-    (total, expense) =>
-      total + Number(expense.amount || 0),
-    0
-  );
+    return (
+      Number(
+        localStorage.getItem(
+          `tripBudget_${userId}`
+        )
+      ) || 0
+    );
 
-  // Planned itinerary costs
-  const itinerarySpending = itinerary.reduce(
-    (total, item) =>
-      total + Number(item.cost || 0),
-    0
-  );
+  });
 
-  // Total = actual expenses + planned activities
+
+  // =========================================
+  // EXPENSES
+  // =========================================
+
+  const [expenses, setExpenses] = useState(() => {
+
+    const savedExpenses =
+      localStorage.getItem(
+        `tripExpenses_${userId}`
+      );
+
+    return savedExpenses
+      ? JSON.parse(savedExpenses)
+      : [];
+
+  });
+
+
+  // =========================================
+  // ITINERARY
+  // =========================================
+
+  const [itinerary, setItinerary] = useState(() => {
+
+    const savedItinerary =
+      localStorage.getItem(
+        `tripItinerary_${userId}`
+      );
+
+    return savedItinerary
+      ? JSON.parse(savedItinerary)
+      : [];
+
+  });
+
+
+  // =========================================
+  // SAVE BUDGET
+  // =========================================
+
+  useEffect(() => {
+
+    localStorage.setItem(
+      `tripBudget_${userId}`,
+      budget
+    );
+
+  }, [budget, userId]);
+
+
+  // =========================================
+  // UPDATE DATA
+  // =========================================
+
+  useEffect(() => {
+
+    function updateData() {
+
+      const savedExpenses =
+        localStorage.getItem(
+          `tripExpenses_${userId}`
+        );
+
+      const savedItinerary =
+        localStorage.getItem(
+          `tripItinerary_${userId}`
+        );
+
+
+      setExpenses(
+        savedExpenses
+          ? JSON.parse(savedExpenses)
+          : []
+      );
+
+
+      setItinerary(
+        savedItinerary
+          ? JSON.parse(savedItinerary)
+          : []
+      );
+
+    }
+
+
+    window.addEventListener(
+      "storage",
+      updateData
+    );
+
+
+    window.addEventListener(
+      "tripMembersUpdated",
+      updateData
+    );
+
+
+    return () => {
+
+      window.removeEventListener(
+        "storage",
+        updateData
+      );
+
+      window.removeEventListener(
+        "tripMembersUpdated",
+        updateData
+      );
+
+    };
+
+  }, [userId]);
+
+
+  // =========================================
+  // EXPENSE SPENDING
+  // =========================================
+
+  const expenseSpending =
+    expenses.reduce(
+      (total, expense) =>
+        total +
+        Number(
+          expense.amount || 0
+        ),
+      0
+    );
+
+
+  // =========================================
+  // ITINERARY COST
+  // =========================================
+
+  const itineraryCost =
+    itinerary.reduce(
+      (total, item) =>
+        total +
+        Number(
+          item.cost || 0
+        ),
+      0
+    );
+
+
+  // =========================================
+  // TOTAL SPENDING
+  // =========================================
+
   const totalSpending =
-    expenseSpending + itinerarySpending;
+    expenseSpending +
+    itineraryCost;
 
-  const remaining =
-    budget - totalSpending;
+
+  // =========================================
+  // REMAINING
+  // =========================================
+
+  const remainingBudget =
+    Math.max(
+      budget -
+      totalSpending,
+      0
+    );
+
+
+  // =========================================
+  // OVER BUDGET
+  // =========================================
+
+  const overBudget =
+    Math.max(
+      totalSpending -
+      budget,
+      0
+    );
+
+
+  // =========================================
+  // PERCENTAGE
+  // =========================================
 
   const percentage =
     budget > 0
       ? Math.min(
-          (totalSpending / budget) * 100,
+          (totalSpending /
+            budget) *
+            100,
           100
         )
       : 0;
 
+
   // =========================================
-  // CATEGORY BREAKDOWN
+  // CATEGORY TOTALS
   // =========================================
 
-  const categories = {};
+  const categoryTotals = {};
 
-  expenses.forEach((expense) => {
-    const category =
-      expense.category || "Other";
 
-    categories[category] =
-      (categories[category] || 0) +
-      Number(expense.amount || 0);
-  });
+  // Expenses
 
-  // Add planned itinerary as its own category
-  if (itinerarySpending > 0) {
-    categories["Planned Activities"] =
-      itinerarySpending;
+  expenses.forEach(
+    (expense) => {
+
+      const category =
+        expense.category ||
+        "Other";
+
+      if (
+        !categoryTotals[
+          category
+        ]
+      ) {
+
+        categoryTotals[
+          category
+        ] = 0;
+
+      }
+
+
+      categoryTotals[
+        category
+      ] += Number(
+        expense.amount || 0
+      );
+
+    }
+  );
+
+
+  // Itinerary
+
+  if (itineraryCost > 0) {
+
+    categoryTotals[
+      "Planned Activities"
+    ] = itineraryCost;
+
   }
+
 
   // =========================================
   // FORMAT MONEY
   // =========================================
 
   function formatMoney(amount) {
-    return `₹${Number(amount).toLocaleString(
-      "en-IN"
+
+    return `₹${Number(
+      amount
+    ).toLocaleString(
+      "en-IN",
+      {
+        maximumFractionDigits: 2,
+      }
     )}`;
+
   }
 
-  // =========================================
-  // NO TRIP
-  // =========================================
-
-  if (!trip) {
-    return (
-      <div>
-        <Navbar />
-
-        <div className="app-layout">
-
-          <Sidebar />
-
-          <main className="main-content">
-
-            <div className="empty-page">
-
-              <h1>
-                No trip yet ✈️
-              </h1>
-
-              <p>
-                Create a trip to start managing
-                your budget.
-              </p>
-
-            </div>
-
-          </main>
-
-        </div>
-      </div>
-    );
-  }
 
   // =========================================
   // PAGE
   // =========================================
 
   return (
+
     <div>
 
       <Navbar />
+
 
       <div className="app-layout">
 
         <Sidebar />
 
+
         <main className="main-content">
 
-          {/* HEADER */}
+
+          {/* =================================
+              HEADER
+          ================================= */}
 
           <div className="page-header">
 
             <div>
-
-              <p className="dashboard-eyebrow">
-                TRIP FINANCES
-              </p>
 
               <h1>
                 📊 Trip Budget
               </h1>
 
               <p>
-                Manage the budget for{" "}
-                <strong>
-                  {trip.tripName}
-                </strong>
-                {" · "}
-                {trip.destination}
+                Track your actual spending
+                and planned itinerary costs.
               </p>
 
             </div>
@@ -192,48 +333,101 @@ function Budget() {
           </div>
 
 
-          {/* BUDGET CARDS */}
+          {/* =================================
+              SET BUDGET
+          ================================= */}
 
-          <div className="cards">
+          <div className="page-card">
 
-            <div className="dashboard-card">
+            <h2>
+              💰 Set Trip Budget
+            </h2>
 
-              <h3>
-                Total Budget
-              </h3>
+            <p>
+              Enter the maximum amount you
+              want to spend on this trip.
+            </p>
 
-              <strong>
-                {formatMoney(budget)}
-              </strong>
+
+            <div className="budget-input-row">
+
+              <input
+                type="number"
+                min="0"
+                placeholder="Trip budget ₹"
+                value={
+                  budget || ""
+                }
+                onChange={(event) =>
+                  setBudget(
+                    Number(
+                      event.target.value
+                    )
+                  )
+                }
+              />
 
             </div>
 
-
-            <div className="dashboard-card">
-
-              <h3>
-                Total Planned Spending
-              </h3>
-
-              <strong>
-                {formatMoney(totalSpending)}
-              </strong>
-
-            </div>
+          </div>
 
 
-            <div className="dashboard-card">
+          {/* =================================
+              OVERVIEW
+          ================================= */}
 
-              <h3>
-                Remaining
-              </h3>
+          <div className="budget-overview-grid">
+
+
+            {/* BUDGET */}
+
+            <div className="budget-stat-card">
+
+              <span>
+                🎯 Total Budget
+              </span>
 
               <strong>
                 {formatMoney(
-                  Math.max(
-                    remaining,
-                    0
-                  )
+                  budget
+                )}
+              </strong>
+
+            </div>
+
+
+            {/* SPENT */}
+
+            <div className="budget-stat-card">
+
+              <span>
+                💸 Total Spending
+              </span>
+
+              <strong>
+                {formatMoney(
+                  totalSpending
+                )}
+              </strong>
+
+              <small>
+                Expenses + planned activities
+              </small>
+
+            </div>
+
+
+            {/* REMAINING */}
+
+            <div className="budget-stat-card">
+
+              <span>
+                💰 Remaining
+              </span>
+
+              <strong>
+                {formatMoney(
+                  remainingBudget
                 )}
               </strong>
 
@@ -242,7 +436,72 @@ function Budget() {
           </div>
 
 
-          {/* SPENDING BREAKDOWN */}
+          {/* =================================
+              SPENDING BREAKDOWN
+          ================================= */}
+
+          <div className="page-card">
+
+            <h2>
+              💸 Spending Breakdown
+            </h2>
+
+
+            <div className="budget-breakdown-grid">
+
+
+              <div>
+
+                <span>
+                  🧾 Actual Expenses
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    expenseSpending
+                  )}
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  🗓️ Planned Activities
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    itineraryCost
+                  )}
+                </strong>
+
+              </div>
+
+
+              <div>
+
+                <span>
+                  💰 Total
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    totalSpending
+                  )}
+                </strong>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          {/* =================================
+              PROGRESS
+          ================================= */}
 
           <div className="page-card">
 
@@ -251,23 +510,21 @@ function Budget() {
               <div>
 
                 <h2>
-                  🧠 Budget Health
+                  📈 Budget Progress
                 </h2>
 
-                <p>
-                  {percentage < 50
-                    ? "You're comfortably within your budget."
-                    : percentage < 80
-                    ? "Keep an eye on your spending."
-                    : percentage < 100
-                    ? "Your remaining budget is getting low."
-                    : "You've reached your planned budget."}
-                </p>
+                <span>
+                  {percentage.toFixed(0)}%
+                  of your budget used
+                </span>
 
               </div>
 
+
               <strong>
-                {percentage.toFixed(0)}% used
+                {formatMoney(
+                  totalSpending
+                )}
               </strong>
 
             </div>
@@ -276,93 +533,107 @@ function Budget() {
             <div className="budget-progress">
 
               <div
-                className="budget-progress-bar"
+                className={`budget-progress-bar ${
+                  percentage >= 100
+                    ? "over"
+                    : percentage >= 80
+                    ? "warning"
+                    : ""
+                }`}
                 style={{
-                  width: `${percentage}%`,
+                  width:
+                    `${percentage}%`,
                 }}
               />
 
             </div>
 
 
-            <div className="budget-health-footer">
+            {/* STATUS */}
 
-              <span>
-                {formatMoney(totalSpending)} planned
-              </span>
+            {budget === 0 ? (
 
-              <span>
-                {formatMoney(
-                  Math.max(
-                    remaining,
-                    0
-                  )
-                )} remaining
-              </span>
+              <p className="budget-status">
 
-            </div>
+                Set your budget above
+                to start tracking.
+
+              </p>
+
+            ) : overBudget > 0 ? (
+
+              <div className="budget-warning">
+
+                🚨 You are{" "}
+
+                <strong>
+                  {formatMoney(
+                    overBudget
+                  )}
+                </strong>
+
+                {" "}over your budget.
+
+              </div>
+
+            ) : percentage >= 80 ? (
+
+              <div className="budget-warning">
+
+                ⚠️ You're getting close
+                to your budget limit.
+
+              </div>
+
+            ) : (
+
+              <div className="budget-good">
+
+                ✅ You're within your
+                budget!
+
+                {" "}You have{" "}
+
+                <strong>
+                  {formatMoney(
+                    remainingBudget
+                  )}
+                </strong>
+
+                {" "}left.
+
+              </div>
+
+            )}
 
           </div>
 
 
-          {/* ACTUAL VS PLANNED */}
-
-          <div className="dashboard-overview-grid">
-
-            <div className="page-card">
-
-              <h2>
-                💸 Actual Expenses
-              </h2>
-
-              <p>
-                Money you've already recorded.
-              </p>
-
-              <strong className="large-money">
-                {formatMoney(
-                  expenseSpending
-                )}
-              </strong>
-
-            </div>
-
-
-            <div className="page-card">
-
-              <h2>
-                🗓️ Planned Activities
-              </h2>
-
-              <p>
-                Estimated costs from your itinerary.
-              </p>
-
-              <strong className="large-money">
-                {formatMoney(
-                  itinerarySpending
-                )}
-              </strong>
-
-            </div>
-
-          </div>
-
-
-          {/* CATEGORY BREAKDOWN */}
+          {/* =================================
+              CATEGORY BREAKDOWN
+          ================================= */}
 
           <div className="page-card">
 
             <h2>
-              📈 Spending Breakdown
+              📊 Spending by Category
             </h2>
 
-            {Object.keys(categories).length === 0 ? (
+
+            {Object.keys(
+              categoryTotals
+            ).length === 0 ? (
 
               <div className="empty-page">
 
+                <h3>
+                  No spending yet 💰
+                </h3>
+
                 <p>
-                  No spending recorded yet.
+                  Add expenses or itinerary
+                  activities to see your
+                  spending breakdown.
                 </p>
 
               </div>
@@ -371,47 +642,54 @@ function Budget() {
 
               <div className="budget-category-list">
 
-                {Object.entries(categories).map(
+                {Object.entries(
+                  categoryTotals
+                ).map(
                   ([category, amount]) => {
 
                     const categoryPercentage =
                       totalSpending > 0
-                        ? (amount / totalSpending) *
+                        ? (
+                            amount /
+                            totalSpending
+                          ) *
                           100
                         : 0;
 
+
                     return (
+
                       <div
-                        className="budget-category"
+                        className="budget-category-item"
                         key={category}
                       >
 
-                        <div className="budget-category-header">
+                        <div>
 
                           <strong>
                             {category}
                           </strong>
 
                           <span>
-                            {formatMoney(amount)}
+                            {categoryPercentage.toFixed(
+                              0
+                            )}
+                            % of spending
                           </span>
 
                         </div>
 
 
-                        <div className="budget-progress">
-
-                          <div
-                            className="budget-progress-bar"
-                            style={{
-                              width: `${categoryPercentage}%`,
-                            }}
-                          />
-
-                        </div>
+                        <strong>
+                          {formatMoney(
+                            amount
+                          )}
+                        </strong>
 
                       </div>
+
                     );
+
                   }
                 )}
 
@@ -421,12 +699,200 @@ function Budget() {
 
           </div>
 
+
+          {/* =================================
+              ITINERARY SUMMARY
+          ================================= */}
+
+          <div className="page-card">
+
+            <div className="section-heading">
+
+              <div>
+
+                <h2>
+                  🗓️ Planned Activities
+                </h2>
+
+                <span>
+                  {itinerary.length}{" "}
+                  {itinerary.length === 1
+                    ? "activity"
+                    : "activities"}
+                </span>
+
+              </div>
+
+
+              <strong>
+                {formatMoney(
+                  itineraryCost
+                )}
+              </strong>
+
+            </div>
+
+
+            {itinerary.length === 0 ? (
+
+              <div className="empty-page">
+
+                <p>
+                  No planned activities yet.
+                </p>
+
+              </div>
+
+            ) : (
+
+              <div className="budget-expense-list">
+
+                {itinerary
+                  .slice()
+                  .reverse()
+                  .slice(0, 5)
+                  .map(
+                    (item) => (
+
+                      <div
+                        className="budget-expense-item"
+                        key={item.id}
+                      >
+
+                        <div>
+
+                          <strong>
+                            {item.activity}
+                          </strong>
+
+                          <span>
+                            📍{" "}
+                            {item.location}
+                          </span>
+
+                        </div>
+
+
+                        <strong>
+                          {Number(
+                            item.cost || 0
+                          ) > 0
+                            ? formatMoney(
+                                Number(
+                                  item.cost
+                                )
+                              )
+                            : "Free"}
+                        </strong>
+
+                      </div>
+
+                    )
+                  )}
+
+              </div>
+
+            )}
+
+          </div>
+
+
+          {/* =================================
+              RECENT EXPENSES
+          ================================= */}
+
+          <div className="page-card">
+
+            <div className="section-heading">
+
+              <h2>
+                🧾 Recent Expenses
+              </h2>
+
+              <span>
+                {expenses.length}{" "}
+                expense
+                {expenses.length !== 1
+                  ? "s"
+                  : ""}
+              </span>
+
+            </div>
+
+
+            {expenses.length === 0 ? (
+
+              <div className="empty-page">
+
+                <h3>
+                  No expenses yet
+                </h3>
+
+                <p>
+                  Add expenses from the
+                  Expenses page.
+                </p>
+
+              </div>
+
+            ) : (
+
+              <div className="budget-expense-list">
+
+                {expenses
+                  .slice()
+                  .reverse()
+                  .slice(0, 5)
+                  .map(
+                    (expense) => (
+
+                      <div
+                        className="budget-expense-item"
+                        key={expense.id}
+                      >
+
+                        <div>
+
+                          <strong>
+                            {expense.description}
+                          </strong>
+
+                          <span>
+                            {expense.category}
+                          </span>
+
+                        </div>
+
+
+                        <strong>
+                          {formatMoney(
+                            Number(
+                              expense.amount ||
+                              0
+                            )
+                          )}
+                        </strong>
+
+                      </div>
+
+                    )
+                  )}
+
+              </div>
+
+            )}
+
+          </div>
+
+
         </main>
 
       </div>
 
     </div>
+
   );
+
 }
 
 export default Budget;

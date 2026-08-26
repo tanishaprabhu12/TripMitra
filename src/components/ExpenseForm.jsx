@@ -1,31 +1,131 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 function ExpenseForm({ expenses, setExpenses }) {
+
+  // =========================================
+  // CURRENT USER
+  // =========================================
+
+  const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+  );
+
+  const currentUserName =
+    currentUser?.name ||
+    currentUser?.fullName ||
+    "Tanisha";
+
+
+  // =========================================
+  // MEMBERS KEY
+  // =========================================
+
+  const membersKey = currentUser
+    ? `tripMembers_${currentUser.id}`
+    : "tripMembers";
+
+
+  // =========================================
+  // MEMBERS
+  // =========================================
+
+  const [members, setMembers] = useState(() => {
+
+    const savedMembers =
+      localStorage.getItem(membersKey);
+
+    return savedMembers
+      ? JSON.parse(savedMembers)
+      : [currentUserName];
+
+  });
+
+
   // =========================================
   // FORM STATE
   // =========================================
 
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
+  const [amount, setAmount] =
+    useState("");
 
-  const [paidBy, setPaidBy] = useState("Tanisha");
+  const [category, setCategory] =
+    useState("");
 
-  const [splitBetween, setSplitBetween] = useState([
-    "Tanisha",
-  ]);
+  const [description, setDescription] =
+    useState("");
+
+  const [paidBy, setPaidBy] =
+    useState(currentUserName);
+
+  const [splitBetween, setSplitBetween] =
+    useState([currentUserName]);
 
 
   // =========================================
-  // TRIP MEMBERS
+  // UPDATE MEMBERS WHEN TRIP MEMBERS CHANGE
   // =========================================
 
-  const savedMembers =
-    localStorage.getItem("tripMembers");
+  useEffect(() => {
 
-  const members = savedMembers
-    ? JSON.parse(savedMembers)
-    : ["Tanisha"];
+    function updateMembers() {
+
+      const savedMembers =
+        localStorage.getItem(membersKey);
+
+      const updatedMembers =
+        savedMembers
+          ? JSON.parse(savedMembers)
+          : [currentUserName];
+
+      setMembers(updatedMembers);
+
+      // Make sure paidBy is still valid
+      setPaidBy((currentPaidBy) => {
+
+        if (
+          updatedMembers.includes(
+            currentPaidBy
+          )
+        ) {
+          return currentPaidBy;
+        }
+
+        return updatedMembers[0] ||
+          currentUserName;
+
+      });
+
+      // Keep only members who still exist
+      setSplitBetween((currentSplit) => {
+
+        const validMembers =
+          currentSplit.filter((member) =>
+            updatedMembers.includes(member)
+          );
+
+        if (validMembers.length > 0) {
+          return validMembers;
+        }
+
+        return updatedMembers.length > 0
+          ? [updatedMembers[0]]
+          : [];
+      });
+    }
+
+    window.addEventListener(
+      "tripMembersUpdated",
+      updateMembers
+    );
+
+    return () => {
+      window.removeEventListener(
+        "tripMembersUpdated",
+        updateMembers
+      );
+    };
+
+  }, [membersKey, currentUserName]);
 
 
   // =========================================
@@ -33,9 +133,23 @@ function ExpenseForm({ expenses, setExpenses }) {
   // =========================================
 
   function toggleMember(member) {
+
     setSplitBetween((currentMembers) => {
 
-      if (currentMembers.includes(member)) {
+      if (
+        currentMembers.includes(member)
+      ) {
+
+        // Don't allow the last person
+        // to be removed
+        if (currentMembers.length === 1) {
+          alert(
+            "At least one person must be selected."
+          );
+
+          return currentMembers;
+        }
+
         return currentMembers.filter(
           (item) => item !== member
         );
@@ -45,7 +159,9 @@ function ExpenseForm({ expenses, setExpenses }) {
         ...currentMembers,
         member,
       ];
+
     });
+
   }
 
 
@@ -54,6 +170,7 @@ function ExpenseForm({ expenses, setExpenses }) {
   // =========================================
 
   function handleSubmit(event) {
+
     event.preventDefault();
 
     if (
@@ -62,13 +179,21 @@ function ExpenseForm({ expenses, setExpenses }) {
       !description ||
       !paidBy
     ) {
-      alert("Please fill in all the fields.");
+
+      alert(
+        "Please fill in all the fields."
+      );
+
       return;
     }
 
-    if (splitBetween.length === 0) {
+
+    if (
+      splitBetween.length === 0
+    ) {
+
       alert(
-        "Please select at least one person to split the expense."
+        "Please select at least one person."
       );
 
       return;
@@ -79,16 +204,37 @@ function ExpenseForm({ expenses, setExpenses }) {
       Number(amount);
 
 
-    // Calculate each person's share
+    if (
+      numericAmount <= 0
+    ) {
+
+      alert(
+        "Amount must be greater than ₹0."
+      );
+
+      return;
+    }
+
+
+    // =========================================
+    // CALCULATE SHARE
+    // =========================================
+
     const sharePerPerson =
       numericAmount /
       splitBetween.length;
 
 
+    // =========================================
+    // CREATE EXPENSE
+    // =========================================
+
     const expense = {
+
       id: Date.now(),
 
-      amount: numericAmount,
+      amount:
+        numericAmount,
 
       category,
 
@@ -96,28 +242,61 @@ function ExpenseForm({ expenses, setExpenses }) {
 
       paidBy,
 
-      splitBetween,
+      splitBetween: [
+        ...splitBetween,
+      ],
 
       sharePerPerson,
+
     };
 
 
-    setExpenses((currentExpenses) => [
-      ...currentExpenses,
-      expense,
-    ]);
+    // =========================================
+    // SAVE EXPENSE
+    // =========================================
+
+    setExpenses(
+      (currentExpenses) => [
+        ...currentExpenses,
+        expense,
+      ]
+    );
 
 
-    // Clear form
+    // =========================================
+    // RESET FORM
+    // =========================================
+
     setAmount("");
+
     setCategory("");
+
     setDescription("");
 
-    setPaidBy("Tanisha");
+    setPaidBy(
+      currentUserName
+    );
 
     setSplitBetween([
-      "Tanisha",
+      currentUserName,
     ]);
+
+  }
+
+
+  // =========================================
+  // FORMAT MONEY
+  // =========================================
+
+  function formatMoney(amount) {
+
+    return Number(amount).toLocaleString(
+      "en-IN",
+      {
+        maximumFractionDigits: 2,
+      }
+    );
+
   }
 
 
@@ -126,6 +305,7 @@ function ExpenseForm({ expenses, setExpenses }) {
   // =========================================
 
   return (
+
     <div className="expense-form">
 
       <h2>
@@ -133,27 +313,38 @@ function ExpenseForm({ expenses, setExpenses }) {
       </h2>
 
 
-      <form onSubmit={handleSubmit}>
+      <form
+        onSubmit={handleSubmit}
+      >
 
-        {/* Amount */}
+
+        {/* =================================
+            AMOUNT
+        ================================= */}
 
         <input
           type="number"
           placeholder="Amount (₹)"
-          min="0"
+          min="1"
           value={amount}
           onChange={(event) =>
-            setAmount(event.target.value)
+            setAmount(
+              event.target.value
+            )
           }
         />
 
 
-        {/* Category */}
+        {/* =================================
+            CATEGORY
+        ================================= */}
 
         <select
           value={category}
           onChange={(event) =>
-            setCategory(event.target.value)
+            setCategory(
+              event.target.value
+            )
           }
         >
 
@@ -188,80 +379,115 @@ function ExpenseForm({ expenses, setExpenses }) {
         </select>
 
 
-        {/* Description */}
+        {/* =================================
+            DESCRIPTION
+        ================================= */}
 
         <input
           type="text"
           placeholder="Description"
           value={description}
           onChange={(event) =>
-            setDescription(event.target.value)
+            setDescription(
+              event.target.value
+            )
           }
         />
 
 
-        {/* Who paid */}
+        {/* =================================
+            WHO PAID
+        ================================= */}
 
         <label>
-          Paid by
+          💳 Paid by
         </label>
 
         <select
           value={paidBy}
           onChange={(event) =>
-            setPaidBy(event.target.value)
+            setPaidBy(
+              event.target.value
+            )
           }
         >
 
-          {members.map((member) => (
-            <option
-              key={member}
-              value={member}
-            >
-              {member}
-            </option>
-          ))}
+          {members.map(
+            (member) => (
+
+              <option
+                key={member}
+                value={member}
+              >
+                {member}
+              </option>
+
+            )
+          )}
 
         </select>
 
 
-        {/* Split between */}
+        {/* =================================
+            SPLIT BETWEEN
+        ================================= */}
 
         <div className="split-section">
 
           <h3>
-            Split between
+            👥 Split between
           </h3>
 
-          {members.map((member) => (
+          <p>
+            Select everyone who should share
+            this expense.
+          </p>
 
-            <label
-              className="split-member"
-              key={member}
-            >
 
-              <input
-                type="checkbox"
-                checked={splitBetween.includes(
-                  member
-                )}
-                onChange={() =>
-                  toggleMember(member)
-                }
-              />
+          {members.map(
+            (member) => (
 
-              <span>
-                {member}
-              </span>
+              <label
+                className="split-member"
+                key={member}
+              >
 
-            </label>
+                <input
+                  type="checkbox"
+                  checked={
+                    splitBetween.includes(
+                      member
+                    )
+                  }
+                  onChange={() =>
+                    toggleMember(
+                      member
+                    )
+                  }
+                />
 
-          ))}
+                <span>
+                  {member}
+
+                  {member ===
+                    currentUserName && (
+                    <small>
+                      {" "} (You)
+                    </small>
+                  )}
+                </span>
+
+              </label>
+
+            )
+          )}
 
         </div>
 
 
-        {/* Preview */}
+        {/* =================================
+            SPLIT PREVIEW
+        ================================= */}
 
         {amount &&
           splitBetween.length > 0 && (
@@ -274,14 +500,9 @@ function ExpenseForm({ expenses, setExpenses }) {
 
             <span>
               ₹
-              {(
+              {formatMoney(
                 Number(amount) /
-                splitBetween.length
-              ).toLocaleString(
-                "en-IN",
-                {
-                  maximumFractionDigits: 2,
-                }
+                  splitBetween.length
               )}
             </span>
 
@@ -290,10 +511,12 @@ function ExpenseForm({ expenses, setExpenses }) {
         )}
 
 
-        {/* Submit */}
+        {/* =================================
+            SUBMIT
+        ================================= */}
 
         <button type="submit">
-          Add Expense
+          Add Expense 💸
         </button>
 
       </form>
@@ -319,71 +542,94 @@ function ExpenseForm({ expenses, setExpenses }) {
 
         ) : (
 
-          expenses.map((expense) => (
+          expenses
+            .slice()
+            .reverse()
+            .map(
+              (expense) => {
 
-            <div
-              className="expense-item"
-              key={expense.id}
-            >
-
-              <div>
-
-                <strong>
-                  {expense.category}
-                </strong>
-
-                <p>
-                  {expense.description}
-                </p>
-
-                <small>
-  Paid by {expense.paidBy || "Tanisha"}
-</small>
-
-<small>
-  {" "}· Split between{" "}
-  {(expense.splitBetween || [expense.paidBy || "Tanisha"]).join(", ")}
-</small>
-
-              </div>
+                const splitMembers =
+                  expense.splitBetween ||
+                  [
+                    expense.paidBy ||
+                      currentUserName,
+                  ];
 
 
-              <div>
+                const share =
+                  Number(
+                    expense.amount || 0
+                  ) /
+                  splitMembers.length;
 
-                <strong>
-                  ₹
-                  {expense.amount.toLocaleString(
-                    "en-IN"
-                  )}
-                </strong>
 
-                <small>
-                  
-                  ₹
-{(
-  expense.sharePerPerson ||
-  Number(expense.amount || 0)
-).toLocaleString(
-  "en-IN",
-  {
-    maximumFractionDigits: 2,
-  }
-)}{" "}
-each
-                </small>
+                return (
 
-              </div>
+                  <div
+                    className="expense-item"
+                    key={expense.id}
+                  >
 
-            </div>
+                    <div>
 
-          ))
+                      <strong>
+                        {expense.category}
+                      </strong>
+
+                      <p>
+                        {expense.description}
+                      </p>
+
+                      <small>
+                        💳 Paid by{" "}
+                        {expense.paidBy ||
+                          currentUserName}
+                      </small>
+
+                      <small>
+                        {" "}· 👥 Split between{" "}
+                        {splitMembers.join(
+                          ", "
+                        )}
+                      </small>
+
+                    </div>
+
+
+                    <div>
+
+                      <strong>
+                        ₹
+                        {formatMoney(
+                          expense.amount
+                        )}
+                      </strong>
+
+                      <small>
+                        ₹
+                        {formatMoney(
+                          share
+                        )}{" "}
+                        each
+                      </small>
+
+                    </div>
+
+                  </div>
+
+                );
+
+              }
+            )
 
         )}
 
       </div>
 
     </div>
+
   );
+
 }
 
 export default ExpenseForm;

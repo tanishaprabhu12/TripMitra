@@ -4,80 +4,147 @@ import Sidebar from "../components/Sidebar";
 
 function Savings() {
 
+  // =========================================
+  // CURRENT USER
+  // =========================================
+
   const currentUser = JSON.parse(
     localStorage.getItem("currentUser") || "null"
   );
 
-  const storageKey = currentUser
-    ? `tripSavings_${currentUser.id}`
-    : "tripSavings";
+  const userId = currentUser?.id || "guest";
 
+  // =========================================
+  // SAVINGS DATA
+  // =========================================
 
-  const [goal, setGoal] = useState(() => {
-
-    const saved = localStorage.getItem(storageKey);
-
-    return saved
-      ? JSON.parse(saved)
-      : {
-          target: 0,
-          saved: 0,
-        };
+  const [goalName, setGoalName] = useState(() => {
+    return (
+      localStorage.getItem(`savingsGoalName_${userId}`) ||
+      ""
+    );
   });
 
+  const [targetAmount, setTargetAmount] = useState(() => {
+    return (
+      Number(
+        localStorage.getItem(`savingsTarget_${userId}`)
+      ) || 0
+    );
+  });
+
+  const [savedAmount, setSavedAmount] = useState(() => {
+    return (
+      Number(
+        localStorage.getItem(`savingsSaved_${userId}`)
+      ) || 0
+    );
+  });
+
+  const [amountToAdd, setAmountToAdd] = useState("");
+
+  // =========================================
+  // SAVE DATA
+  // =========================================
 
   useEffect(() => {
-
     localStorage.setItem(
-      storageKey,
-      JSON.stringify(goal)
+      `savingsGoalName_${userId}`,
+      goalName
     );
 
-  }, [goal, storageKey]);
+    localStorage.setItem(
+      `savingsTarget_${userId}`,
+      targetAmount
+    );
 
+    localStorage.setItem(
+      `savingsSaved_${userId}`,
+      savedAmount
+    );
+  }, [
+    goalName,
+    targetAmount,
+    savedAmount,
+    userId,
+  ]);
 
-  const [targetInput, setTargetInput] =
-    useState("");
+  // =========================================
+  // ADD SAVINGS
+  // =========================================
 
-  const [savedInput, setSavedInput] =
-    useState("");
-
-
-  function updateGoal(event) {
-
+  function addSavings(event) {
     event.preventDefault();
 
-    if (!targetInput) {
-      alert("Please enter a savings goal.");
+    const amount = Number(amountToAdd);
+
+    if (!amount || amount <= 0) {
+      alert("Please enter a valid amount.");
       return;
     }
 
-    setGoal({
-      target: Number(targetInput),
-      saved: Number(savedInput) || 0,
-    });
+    setSavedAmount(
+      (currentAmount) =>
+        currentAmount + amount
+    );
 
-    setTargetInput("");
-    setSavedInput("");
+    setAmountToAdd("");
   }
 
+  // =========================================
+  // CALCULATIONS
+  // =========================================
+
+  const remainingAmount = Math.max(
+    targetAmount - savedAmount,
+    0
+  );
 
   const percentage =
-    goal.target > 0
+    targetAmount > 0
       ? Math.min(
-          (goal.saved / goal.target) * 100,
+          (savedAmount / targetAmount) * 100,
           100
         )
       : 0;
 
+  // =========================================
+  // FORMAT MONEY
+  // =========================================
 
   function formatMoney(amount) {
-
     return `₹${amount.toLocaleString(
-      "en-IN"
+      "en-IN",
+      {
+        maximumFractionDigits: 2,
+      }
     )}`;
   }
 
+  // =========================================
+  // RESET GOAL
+  // =========================================
+
+  function resetGoal() {
+
+    const confirmReset =
+      window.confirm(
+        "Are you sure you want to reset your savings goal?"
+      );
+
+    if (!confirmReset) {
+      return;
+    }
+
+    setGoalName("");
+    setTargetAmount(0);
+    setSavedAmount(0);
+    setAmountToAdd("");
+  }
+
+  // =========================================
+  // PAGE
+  // =========================================
 
   return (
     <div>
@@ -90,85 +157,111 @@ function Savings() {
 
         <main className="main-content">
 
+          {/* =================================
+              HEADER
+          ================================= */}
+
           <div className="page-header">
 
             <div>
-              <h1>🎯 Savings</h1>
+
+              <h1>
+                🎯 Savings
+              </h1>
 
               <p>
-                Set a goal and save towards your next adventure.
+                Set a goal and track your
+                savings progress.
               </p>
-            </div>
-
-          </div>
-
-
-          {/* SAVINGS OVERVIEW */}
-
-          <div className="cards">
-
-            <div className="dashboard-card">
-
-              <h3>
-                Savings Goal
-              </h3>
-
-              <strong>
-                {formatMoney(goal.target)}
-              </strong>
-
-            </div>
-
-
-            <div className="dashboard-card">
-
-              <h3>
-                Amount Saved
-              </h3>
-
-              <strong>
-                {formatMoney(goal.saved)}
-              </strong>
-
-            </div>
-
-
-            <div className="dashboard-card">
-
-              <h3>
-                Remaining
-              </h3>
-
-              <strong>
-                {formatMoney(
-                  Math.max(
-                    goal.target - goal.saved,
-                    0
-                  )
-                )}
-              </strong>
 
             </div>
 
           </div>
 
 
-          {/* PROGRESS */}
+          {/* =================================
+              SET GOAL
+          ================================= */}
 
           <div className="page-card">
 
             <h2>
-              🚀 Savings Progress
+              🎯 Create Savings Goal
             </h2>
 
-            <p>
-              {percentage.toFixed(0)}% of your goal completed.
-            </p>
+            <div className="savings-goal-form">
 
-            <div className="budget-progress">
+              <input
+                type="text"
+                placeholder="Goal name e.g. Goa Trip"
+                value={goalName}
+                onChange={(event) =>
+                  setGoalName(
+                    event.target.value
+                  )
+                }
+              />
+
+              <input
+                type="number"
+                min="0"
+                placeholder="Target amount ₹"
+                value={
+                  targetAmount || ""
+                }
+                onChange={(event) =>
+                  setTargetAmount(
+                    Number(
+                      event.target.value
+                    )
+                  )
+                }
+              />
+
+            </div>
+
+          </div>
+
+
+          {/* =================================
+              PROGRESS
+          ================================= */}
+
+          <div className="page-card">
+
+            <div className="section-heading">
+
+              <div>
+
+                <h2>
+                  💰 {goalName || "My Savings Goal"}
+                </h2>
+
+                <span>
+                  {targetAmount > 0
+                    ? `${formatMoney(
+                        savedAmount
+                      )} saved of ${formatMoney(
+                        targetAmount
+                      )}`
+                    : "Set a target amount to start tracking."}
+                </span>
+
+              </div>
+
+              <strong>
+                {percentage.toFixed(0)}%
+              </strong>
+
+            </div>
+
+
+            {/* Progress bar */}
+
+            <div className="savings-progress">
 
               <div
-                className="budget-progress-bar"
+                className="savings-progress-bar"
                 style={{
                   width: `${percentage}%`,
                 }}
@@ -176,51 +269,145 @@ function Savings() {
 
             </div>
 
+
+            {/* Statistics */}
+
+            <div className="savings-stats">
+
+              <div className="savings-stat">
+
+                <span>
+                  💵 Saved
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    savedAmount
+                  )}
+                </strong>
+
+              </div>
+
+
+              <div className="savings-stat">
+
+                <span>
+                  🎯 Target
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    targetAmount
+                  )}
+                </strong>
+
+              </div>
+
+
+              <div className="savings-stat">
+
+                <span>
+                  📌 Remaining
+                </span>
+
+                <strong>
+                  {formatMoney(
+                    remainingAmount
+                  )}
+                </strong>
+
+              </div>
+
+            </div>
+
           </div>
 
 
-          {/* SET GOAL */}
+          {/* =================================
+              ADD SAVINGS
+          ================================= */}
 
           <div className="page-card">
 
             <h2>
-              ✨ Set Savings Goal
+              ➕ Add Money
             </h2>
 
+            <p>
+              Add money whenever you save
+              towards your goal.
+            </p>
+
             <form
-              className="expense-page-form"
-              onSubmit={updateGoal}
+              className="savings-add-form"
+              onSubmit={addSavings}
             >
 
               <input
                 type="number"
-                placeholder="Savings target ₹"
-                value={targetInput}
+                min="1"
+                placeholder="Amount ₹"
+                value={amountToAdd}
                 onChange={(event) =>
-                  setTargetInput(
-                    event.target.value
-                  )
-                }
-              />
-
-              <input
-                type="number"
-                placeholder="Already saved ₹"
-                value={savedInput}
-                onChange={(event) =>
-                  setSavedInput(
+                  setAmountToAdd(
                     event.target.value
                   )
                 }
               />
 
               <button type="submit">
-                Save Goal
+                Add Savings 💰
               </button>
 
             </form>
 
           </div>
+
+
+          {/* =================================
+              GOAL COMPLETE
+          ================================= */}
+
+          {targetAmount > 0 &&
+            savedAmount >= targetAmount && (
+
+            <div className="savings-complete">
+
+              <div>
+                🏆
+              </div>
+
+              <h2>
+                Goal Achieved!
+              </h2>
+
+              <p>
+                Congratulations! You reached
+                your savings goal.
+              </p>
+
+            </div>
+
+          )}
+
+
+          {/* =================================
+              RESET
+          ================================= */}
+
+          {(goalName ||
+            targetAmount > 0 ||
+            savedAmount > 0) && (
+
+            <button
+              className="reset-savings"
+              type="button"
+              onClick={resetGoal}
+            >
+              Reset Savings Goal
+            </button>
+
+          )}
 
         </main>
 

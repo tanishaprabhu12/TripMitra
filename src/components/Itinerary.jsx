@@ -31,7 +31,7 @@ function Itinerary({ onCostChange }) {
 
 
   // =========================================
-  // FORM
+  // FORM STATE
   // =========================================
 
   const [day, setDay] = useState("");
@@ -39,6 +39,7 @@ function Itinerary({ onCostChange }) {
   const [location, setLocation] = useState("");
   const [time, setTime] = useState("");
   const [cost, setCost] = useState("");
+  const [notes, setNotes] = useState("");
 
 
   // =========================================
@@ -56,93 +57,6 @@ function Itinerary({ onCostChange }) {
 
 
   // =========================================
-  // UPDATE COST
-  // =========================================
-
-  useEffect(() => {
-
-    const totalCost = activities.reduce(
-      (total, item) =>
-        total + Number(item.cost || 0),
-      0
-    );
-
-    if (typeof onCostChange === "function") {
-      onCostChange(totalCost);
-    }
-
-  }, [activities, onCostChange]);
-
-
-  // =========================================
-  // ADD ACTIVITY
-  // =========================================
-
-  function handleSubmit(event) {
-
-    event.preventDefault();
-
-    if (!day || !activity || !location) {
-
-      alert(
-        "Please fill in the day, activity and location."
-      );
-
-      return;
-    }
-
-
-    const newActivity = {
-
-      id: Date.now(),
-
-      day,
-
-      activity,
-
-      location,
-
-      time,
-
-      cost: Number(cost) || 0,
-    };
-
-
-    setActivities((currentActivities) => [
-
-      ...currentActivities,
-
-      newActivity,
-
-    ]);
-
-
-    // Clear form
-
-    setDay("");
-    setActivity("");
-    setLocation("");
-    setTime("");
-    setCost("");
-  }
-
-
-  // =========================================
-  // DELETE ACTIVITY
-  // =========================================
-
-  function deleteActivity(id) {
-
-    setActivities((currentActivities) =>
-      currentActivities.filter(
-        (item) => item.id !== id
-      )
-    );
-
-  }
-
-
-  // =========================================
   // TOTAL COST
   // =========================================
 
@@ -154,6 +68,138 @@ function Itinerary({ onCostChange }) {
 
 
   // =========================================
+  // UPDATE DASHBOARD COST
+  // =========================================
+
+  useEffect(() => {
+
+    if (typeof onCostChange === "function") {
+      onCostChange(totalCost);
+    }
+
+  }, [totalCost, onCostChange]);
+
+
+  // =========================================
+  // ADD ACTIVITY
+  // =========================================
+
+  function handleSubmit(event) {
+
+    event.preventDefault();
+
+    if (
+      !day.trim() ||
+      !activity.trim() ||
+      !location.trim()
+    ) {
+
+      alert(
+        "Please fill in the day, activity and location."
+      );
+
+      return;
+    }
+
+
+    const numericCost =
+      Number(cost) || 0;
+
+
+    const newActivity = {
+
+      id: Date.now(),
+
+      day: day.trim(),
+
+      activity: activity.trim(),
+
+      location: location.trim(),
+
+      time,
+
+      cost: numericCost,
+
+      notes: notes.trim(),
+
+    };
+
+
+    setActivities(
+      (currentActivities) => [
+        ...currentActivities,
+        newActivity,
+      ]
+    );
+
+
+    // Clear form
+
+    setDay("");
+    setActivity("");
+    setLocation("");
+    setTime("");
+    setCost("");
+    setNotes("");
+  }
+
+
+  // =========================================
+  // DELETE ACTIVITY
+  // =========================================
+
+  function deleteActivity(id) {
+
+    setActivities(
+      (currentActivities) =>
+        currentActivities.filter(
+          (item) => item.id !== id
+        )
+    );
+
+  }
+
+
+  // =========================================
+  // GROUP ACTIVITIES BY DAY
+  // =========================================
+
+  const groupedActivities = activities.reduce(
+    (groups, item) => {
+
+      const dayName =
+        item.day || "Other";
+
+      if (!groups[dayName]) {
+        groups[dayName] = [];
+      }
+
+      groups[dayName].push(item);
+
+      return groups;
+
+    },
+    {}
+  );
+
+
+  // =========================================
+  // FORMAT MONEY
+  // =========================================
+
+  function formatMoney(amount) {
+
+    return `₹${Number(amount).toLocaleString(
+      "en-IN",
+      {
+        maximumFractionDigits: 2,
+      }
+    )}`;
+
+  }
+
+
+  // =========================================
   // PAGE
   // =========================================
 
@@ -161,7 +207,10 @@ function Itinerary({ onCostChange }) {
 
     <div className="itinerary-section">
 
-      {/* HEADER */}
+
+      {/* =====================================
+          HEADER
+      ====================================== */}
 
       <div className="itinerary-header">
 
@@ -172,96 +221,193 @@ function Itinerary({ onCostChange }) {
           </h2>
 
           <p>
-            Plan your activities and places to visit.
+            Organize your activities,
+            locations and plans for each day.
           </p>
+
+        </div>
+
+
+        <div className="itinerary-summary">
+
+          <div>
+
+            <span>
+              Activities
+            </span>
+
+            <strong>
+              {activities.length}
+            </strong>
+
+          </div>
+
+
+          <div>
+
+            <span>
+              Planned Cost
+            </span>
+
+            <strong>
+              {formatMoney(totalCost)}
+            </strong>
+
+          </div>
 
         </div>
 
       </div>
 
 
-      {/* ADD ACTIVITY */}
+      {/* =====================================
+          ADD ACTIVITY
+      ====================================== */}
 
-      <form
-        className="itinerary-form"
-        onSubmit={handleSubmit}
-      >
+      <div className="page-card">
 
-        <input
-          type="text"
-          placeholder="Day (e.g. Day 1)"
-          value={day}
-          onChange={(event) =>
-            setDay(event.target.value)
-          }
-        />
+        <h2>
+          ➕ Add Activity
+        </h2>
 
-
-        <input
-          type="text"
-          placeholder="Activity"
-          value={activity}
-          onChange={(event) =>
-            setActivity(event.target.value)
-          }
-        />
+        <form
+          className="itinerary-form"
+          onSubmit={handleSubmit}
+        >
 
 
-        <input
-          type="text"
-          placeholder="Location"
-          value={location}
-          onChange={(event) =>
-            setLocation(event.target.value)
-          }
-        />
+          {/* DAY */}
+
+          <input
+            type="text"
+            placeholder="Day (e.g. Day 1)"
+            value={day}
+            onChange={(event) =>
+              setDay(event.target.value)
+            }
+          />
 
 
-        <input
-          type="time"
-          value={time}
-          onChange={(event) =>
-            setTime(event.target.value)
-          }
-        />
+          {/* ACTIVITY */}
+
+          <input
+            type="text"
+            placeholder="Activity"
+            value={activity}
+            onChange={(event) =>
+              setActivity(
+                event.target.value
+              )
+            }
+          />
 
 
-        <input
-          type="number"
-          placeholder="Estimated cost ₹"
-          min="0"
-          value={cost}
-          onChange={(event) =>
-            setCost(event.target.value)
-          }
-        />
+          {/* LOCATION */}
+
+          <input
+            type="text"
+            placeholder="Location"
+            value={location}
+            onChange={(event) =>
+              setLocation(
+                event.target.value
+              )
+            }
+          />
 
 
-        <button type="submit">
-          + Add Activity
-        </button>
+          {/* TIME */}
 
-      </form>
+          <input
+            type="time"
+            value={time}
+            onChange={(event) =>
+              setTime(
+                event.target.value
+              )
+            }
+          />
 
 
-      {/* TOTAL */}
+          {/* COST */}
 
-      <div className="itinerary-total">
+          <input
+            type="number"
+            min="0"
+            placeholder="Estimated cost ₹"
+            value={cost}
+            onChange={(event) =>
+              setCost(
+                event.target.value
+              )
+            }
+          />
 
-        <span>
-          💰 Total Planned Cost
-        </span>
 
-        <strong>
-          ₹{totalCost.toLocaleString("en-IN")}
-        </strong>
+          {/* NOTES */}
+
+          <textarea
+            placeholder="Notes (optional)"
+            value={notes}
+            onChange={(event) =>
+              setNotes(
+                event.target.value
+              )
+            }
+            rows="3"
+          />
+
+
+          {/* SUBMIT */}
+
+          <button type="submit">
+            + Add Activity
+          </button>
+
+        </form>
 
       </div>
 
 
-      {/* ACTIVITIES */}
+      {/* =====================================
+          TOTAL
+      ====================================== */}
+
+      <div className="itinerary-total">
+
+        <div>
+
+          <span>
+            💰 Total Planned Cost
+          </span>
+
+          <strong>
+            {formatMoney(totalCost)}
+          </strong>
+
+        </div>
+
+        <div>
+
+          <span>
+            🗺️ Activities Planned
+          </span>
+
+          <strong>
+            {activities.length}
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      {/* =====================================
+          ACTIVITIES
+      ====================================== */}
 
       <div className="itinerary-list">
+
 
         {activities.length === 0 ? (
 
@@ -272,77 +418,138 @@ function Itinerary({ onCostChange }) {
             </h3>
 
             <p>
-              Add your first activity to start
-              building your trip itinerary.
+              Add your first activity above to
+              start building your trip itinerary.
             </p>
 
           </div>
 
         ) : (
 
-          activities.map((item) => (
+          Object.entries(
+            groupedActivities
+          ).map(
+            ([dayName, dayActivities]) => (
 
-            <div
-              className="itinerary-item"
-              key={item.id}
-            >
-
-              <div className="itinerary-day">
-
-                <strong>
-                  {item.day}
-                </strong>
-
-              </div>
+              <div
+                className="itinerary-day-group"
+                key={dayName}
+              >
 
 
-              <div className="itinerary-details">
+                {/* DAY HEADER */}
 
-                <h3>
-                  {item.activity}
-                </h3>
+                <div className="itinerary-day-header">
 
-                <p>
-                  📍 {item.location}
-                </p>
+                  <h2>
+                    📅 {dayName}
+                  </h2>
 
-                {item.time && (
+                  <span>
+                    {dayActivities.length}{" "}
+                    {dayActivities.length === 1
+                      ? "activity"
+                      : "activities"}
+                  </span>
 
-                  <p>
-                    🕐 {item.time}
-                  </p>
+                </div>
 
+
+                {/* DAY ACTIVITIES */}
+
+                {dayActivities.map(
+                  (item) => (
+
+                    <div
+                      className="itinerary-item"
+                      key={item.id}
+                    >
+
+
+                      {/* TIME */}
+
+                      <div className="itinerary-time">
+
+                        {item.time ? (
+                          <>
+                            <span>
+                              🕐
+                            </span>
+
+                            <strong>
+                              {item.time}
+                            </strong>
+                          </>
+                        ) : (
+                          <span>
+                            🕐 Anytime
+                          </span>
+                        )}
+
+                      </div>
+
+
+                      {/* DETAILS */}
+
+                      <div className="itinerary-details">
+
+                        <h3>
+                          {item.activity}
+                        </h3>
+
+                        <p>
+                          📍 {item.location}
+                        </p>
+
+
+                        {item.notes && (
+
+                          <p className="itinerary-notes">
+                            📝 {item.notes}
+                          </p>
+
+                        )}
+
+                      </div>
+
+
+                      {/* COST */}
+
+                      <div className="itinerary-cost">
+
+                        {Number(item.cost) > 0
+                          ? formatMoney(
+                              item.cost
+                            )
+                          : "Free"}
+
+                      </div>
+
+
+                      {/* DELETE */}
+
+                      <button
+                        type="button"
+                        className="delete-itinerary"
+                        onClick={() =>
+                          deleteActivity(
+                            item.id
+                          )
+                        }
+                        title="Delete activity"
+                      >
+                        🗑️
+                      </button>
+
+                    </div>
+
+                  )
                 )}
 
               </div>
 
-
-              <div className="itinerary-cost">
-
-                {Number(item.cost) > 0
-
-                  ? `₹${Number(
-                      item.cost
-                    ).toLocaleString("en-IN")}`
-
-                  : "Free"}
-
-              </div>
-
-
-              <button
-                type="button"
-                className="delete-itinerary"
-                onClick={() =>
-                  deleteActivity(item.id)
-                }
-              >
-                🗑️
-              </button>
-
-            </div>
-
-          ))
+            )
+          )
 
         )}
 
@@ -351,6 +558,7 @@ function Itinerary({ onCostChange }) {
     </div>
 
   );
+
 }
 
 export default Itinerary;

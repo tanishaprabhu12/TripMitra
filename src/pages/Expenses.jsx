@@ -1,6 +1,9 @@
 import { useEffect, useState } from "react";
+
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import TripMembers from "../components/TripMembers";
+import ExpenseForm from "../components/ExpenseForm";
 
 function Expenses() {
 
@@ -12,23 +15,30 @@ function Expenses() {
     localStorage.getItem("currentUser") || "null"
   );
 
+  const currentUserName =
+    currentUser?.name ||
+    currentUser?.fullName ||
+    "Tanisha";
+
+
   // =========================================
   // EXPENSES
   // =========================================
 
+  const expensesKey = currentUser
+    ? `tripExpenses_${currentUser.id}`
+    : "tripExpenses";
+
+
   const [expenses, setExpenses] = useState(() => {
 
-    if (!currentUser) {
-      return [];
-    }
-
-    const savedExpenses = localStorage.getItem(
-      `tripExpenses_${currentUser.id}`
-    );
+    const savedExpenses =
+      localStorage.getItem(expensesKey);
 
     return savedExpenses
       ? JSON.parse(savedExpenses)
       : [];
+
   });
 
 
@@ -38,58 +48,12 @@ function Expenses() {
 
   useEffect(() => {
 
-    if (!currentUser) {
-      return;
-    }
-
     localStorage.setItem(
-      `tripExpenses_${currentUser.id}`,
+      expensesKey,
       JSON.stringify(expenses)
     );
 
-  }, [expenses, currentUser]);
-
-
-  // =========================================
-  // FORM
-  // =========================================
-
-  const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState("");
-  const [description, setDescription] = useState("");
-
-
-  // =========================================
-  // ADD EXPENSE
-  // =========================================
-
-  function handleSubmit(event) {
-
-    event.preventDefault();
-
-    if (!amount || !category || !description) {
-      alert("Please fill in all the fields.");
-      return;
-    }
-
-    const newExpense = {
-      id: Date.now(),
-      amount: Number(amount),
-      category,
-      description,
-      paidBy: currentUser?.name || "You",
-      splitBetween: [currentUser?.name || "You"],
-    };
-
-    setExpenses((currentExpenses) => [
-      ...currentExpenses,
-      newExpense,
-    ]);
-
-    setAmount("");
-    setCategory("");
-    setDescription("");
-  }
+  }, [expenses, expensesKey]);
 
 
   // =========================================
@@ -103,18 +67,21 @@ function Expenses() {
         (expense) => expense.id !== id
       )
     );
+
   }
 
 
   // =========================================
-  // TOTAL
+  // TOTAL SPENDING
   // =========================================
 
-  const totalSpending = expenses.reduce(
-    (total, expense) =>
-      total + Number(expense.amount || 0),
-    0
-  );
+  const totalSpending =
+    expenses.reduce(
+      (total, expense) =>
+        total +
+        Number(expense.amount || 0),
+      0
+    );
 
 
   // =========================================
@@ -131,6 +98,7 @@ function Expenses() {
 
     categoryTotals[expense.category] +=
       Number(expense.amount || 0);
+
   });
 
 
@@ -140,12 +108,43 @@ function Expenses() {
 
   function formatMoney(amount) {
 
-    return `₹${amount.toLocaleString(
+    return `₹${Number(amount).toLocaleString(
       "en-IN",
       {
         maximumFractionDigits: 2,
       }
     )}`;
+
+  }
+
+
+  // =========================================
+  // CATEGORY ICON
+  // =========================================
+
+  function getCategoryIcon(category) {
+
+    if (category === "Food") {
+      return "🍴";
+    }
+
+    if (category === "Accommodation") {
+      return "🏨";
+    }
+
+    if (category === "Transport") {
+      return "🚕";
+    }
+
+    if (category === "Activities") {
+      return "🎟️";
+    }
+
+    if (category === "Shopping") {
+      return "🛍️";
+    }
+
+    return "💳";
   }
 
 
@@ -154,117 +153,166 @@ function Expenses() {
   // =========================================
 
   return (
+
     <div>
 
       <Navbar />
+
 
       <div className="app-layout">
 
         <Sidebar />
 
+
         <main className="main-content">
 
-          {/* HEADER */}
+
+          {/* =================================
+              HEADER
+          ================================= */}
 
           <div className="page-header">
 
             <div>
-              <h1>💸 Expenses</h1>
+
+              <h1>
+                💸 Expenses
+              </h1>
 
               <p>
-                Track and manage all your trip expenses.
+                Track expenses and split them
+                fairly with your trip members.
               </p>
+
             </div>
 
+
             <div className="page-total">
-              <span>Total Spending</span>
+
+              <span>
+                Total Spending
+              </span>
 
               <strong>
-                {formatMoney(totalSpending)}
+                {formatMoney(
+                  totalSpending
+                )}
               </strong>
+
             </div>
 
           </div>
 
 
-          {/* ADD EXPENSE */}
+          {/* =================================
+              EXPENSE + MEMBERS
+          ================================= */}
+
+          <div
+            className="dashboard-lower"
+          >
+
+
+            {/* =================================
+                EXPENSE FORM
+            ================================= */}
+
+            <div className="expense-section">
+
+              <ExpenseForm
+                expenses={expenses}
+                setExpenses={setExpenses}
+              />
+
+            </div>
+
+
+            {/* =================================
+                TRIP MEMBERS
+            ================================= */}
+
+            <div className="members-section">
+
+              <TripMembers />
+
+            </div>
+
+          </div>
+
+
+          {/* =================================
+              SPLITTING EXPLANATION
+          ================================= */}
 
           <div className="page-card">
 
             <h2>
-              ➕ Add Expense
+              💡 How Expense Splitting Works
             </h2>
 
-            <form
-              className="expense-page-form"
-              onSubmit={handleSubmit}
-            >
+            <p>
+              Add everyone traveling with you,
+              then select who paid for an expense
+              and who should share it.
+            </p>
 
-              <input
-                type="number"
-                placeholder="Amount ₹"
-                value={amount}
-                onChange={(event) =>
-                  setAmount(event.target.value)
-                }
-              />
+            <div className="split-info-grid">
 
-              <select
-                value={category}
-                onChange={(event) =>
-                  setCategory(event.target.value)
-                }
-              >
+              <div>
+                <strong>
+                  1️⃣ Add Members
+                </strong>
 
-                <option value="">
-                  Select category
-                </option>
+                <p>
+                  Add friends or family members
+                  joining the trip.
+                </p>
+              </div>
 
-                <option value="Food">
-                  🍴 Food
-                </option>
 
-                <option value="Accommodation">
-                  🏨 Accommodation
-                </option>
+              <div>
+                <strong>
+                  2️⃣ Add Expense
+                </strong>
 
-                <option value="Transport">
-                  🚕 Transport
-                </option>
+                <p>
+                  Enter the amount and choose
+                  who paid.
+                </p>
+              </div>
 
-                <option value="Activities">
-                  🎟️ Activities
-                </option>
 
-                <option value="Shopping">
-                  🛍️ Shopping
-                </option>
+              <div>
+                <strong>
+                  3️⃣ Split
+                </strong>
 
-                <option value="Other">
-                  💳 Other
-                </option>
+                <p>
+                  Select everyone who should
+                  share the expense.
+                </p>
+              </div>
 
-              </select>
 
-              <input
-                type="text"
-                placeholder="What did you spend on?"
-                value={description}
-                onChange={(event) =>
-                  setDescription(event.target.value)
-                }
-              />
+              <div>
+                <strong>
+                  4️⃣ Settle
+                </strong>
 
-              <button type="submit">
-                Add Expense
-              </button>
+                <p>
+                  TripMitra calculates who owes
+                  whom.
+                </p>
+              </div>
 
-            </form>
+            </div>
 
           </div>
 
 
-          {/* CATEGORY SUMMARY */}
+          {/* =================================
+              CATEGORY SUMMARY
+          ================================= */}
 
           <div className="page-card">
 
@@ -272,9 +320,12 @@ function Expenses() {
               📊 Spending by Category
             </h2>
 
+
             <div className="category-summary">
 
-              {Object.keys(categoryTotals).length === 0 ? (
+              {Object.keys(
+                categoryTotals
+              ).length === 0 ? (
 
                 <p>
                   No expenses recorded yet.
@@ -282,7 +333,9 @@ function Expenses() {
 
               ) : (
 
-                Object.entries(categoryTotals).map(
+                Object.entries(
+                  categoryTotals
+                ).map(
                   ([category, amount]) => (
 
                     <div
@@ -291,11 +344,16 @@ function Expenses() {
                     >
 
                       <span>
+                        {getCategoryIcon(
+                          category
+                        )}{" "}
                         {category}
                       </span>
 
                       <strong>
-                        {formatMoney(amount)}
+                        {formatMoney(
+                          amount
+                        )}
                       </strong>
 
                     </div>
@@ -310,7 +368,9 @@ function Expenses() {
           </div>
 
 
-          {/* EXPENSE HISTORY */}
+          {/* =================================
+              EXPENSE HISTORY
+          ================================= */}
 
           <div className="page-card">
 
@@ -339,7 +399,8 @@ function Expenses() {
                 </h3>
 
                 <p>
-                  Add your first trip expense above.
+                  Add your first trip expense
+                  above.
                 </p>
 
               </div>
@@ -351,73 +412,109 @@ function Expenses() {
                 {expenses
                   .slice()
                   .reverse()
-                  .map((expense) => (
+                  .map((expense) => {
 
-                    <div
-                      className="expense-history-item"
-                      key={expense.id}
-                    >
-
-                      <div className="expense-icon">
-
-                        {expense.category === "Food"
-                          ? "🍴"
-                          : expense.category ===
-                            "Accommodation"
-                          ? "🏨"
-                          : expense.category ===
-                            "Transport"
-                          ? "🚕"
-                          : expense.category ===
-                            "Activities"
-                          ? "🎟️"
-                          : expense.category ===
-                            "Shopping"
-                          ? "🛍️"
-                          : "💳"}
-
-                      </div>
+                    const splitMembers =
+                      expense.splitBetween ||
+                      [
+                        expense.paidBy ||
+                        currentUserName,
+                      ];
 
 
-                      <div className="expense-history-info">
-
-                        <strong>
-                          {expense.description}
-                        </strong>
-
-                        <span>
-                          {expense.category}
-                        </span>
-
-                      </div>
+                    const share =
+                      Number(
+                        expense.amount || 0
+                      ) /
+                      splitMembers.length;
 
 
-                      <div className="expense-history-amount">
+                    return (
 
-                        <strong>
-                          {formatMoney(
-                            Number(
-                              expense.amount || 0
-                            )
+                      <div
+                        className="expense-history-item"
+                        key={expense.id}
+                      >
+
+
+                        {/* ICON */}
+
+                        <div className="expense-icon">
+
+                          {getCategoryIcon(
+                            expense.category
                           )}
-                        </strong>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            deleteExpense(
-                              expense.id
-                            )
-                          }
-                        >
-                          Delete
-                        </button>
+                        </div>
+
+
+                        {/* INFO */}
+
+                        <div className="expense-history-info">
+
+                          <strong>
+                            {expense.description}
+                          </strong>
+
+                          <span>
+                            {expense.category}
+                          </span>
+
+                          <small>
+                            💳 Paid by{" "}
+                            {expense.paidBy ||
+                              currentUserName}
+                          </small>
+
+                          <small>
+                            👥 Split between{" "}
+                            {splitMembers.join(
+                              ", "
+                            )}
+                          </small>
+
+                        </div>
+
+
+                        {/* AMOUNT */}
+
+                        <div className="expense-history-amount">
+
+                          <strong>
+                            {formatMoney(
+                              Number(
+                                expense.amount ||
+                                0
+                              )
+                            )}
+                          </strong>
+
+                          <small>
+                            {formatMoney(
+                              share
+                            )}{" "}
+                            each
+                          </small>
+
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              deleteExpense(
+                                expense.id
+                              )
+                            }
+                          >
+                            Delete
+                          </button>
+
+                        </div>
 
                       </div>
 
-                    </div>
+                    );
 
-                  ))}
+                  })}
 
               </div>
 
@@ -425,12 +522,15 @@ function Expenses() {
 
           </div>
 
+
         </main>
 
       </div>
 
     </div>
+
   );
+
 }
 
 export default Expenses;

@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import DashboardCard from "../components/DashboardCard";
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import TravelAssistant from "../components/TravelAssistant";
 
 function Dashboard() {
   // =========================================
@@ -12,6 +13,18 @@ function Dashboard() {
   const currentUser = JSON.parse(
     localStorage.getItem("currentUser") || "null"
   );
+
+  // =========================================
+  // TRIP
+  // =========================================
+
+  const savedTrip = currentUser
+    ? localStorage.getItem(`trip_${currentUser.id}`)
+    : null;
+
+  const trip = savedTrip
+    ? JSON.parse(savedTrip)
+    : null;
 
   // =========================================
   // EXPENSES
@@ -50,21 +63,7 @@ function Dashboard() {
   });
 
   // =========================================
-  // TRIP
-  // =========================================
-
-  const savedTrip = currentUser
-    ? localStorage.getItem(
-        `trip_${currentUser.id}`
-      )
-    : null;
-
-  const trip = savedTrip
-    ? JSON.parse(savedTrip)
-    : null;
-
-  // =========================================
-  // KEEP DASHBOARD DATA UPDATED
+  // REFRESH DATA
   // =========================================
 
   useEffect(() => {
@@ -96,21 +95,15 @@ function Dashboard() {
 
     updateData();
 
-    window.addEventListener(
-      "storage",
-      updateData
-    );
+    window.addEventListener("storage", updateData);
 
     return () => {
-      window.removeEventListener(
-        "storage",
-        updateData
-      );
+      window.removeEventListener("storage", updateData);
     };
   }, [currentUser?.id]);
 
   // =========================================
-  // NO USER
+  // NO LOGIN
   // =========================================
 
   if (!currentUser) {
@@ -148,8 +141,7 @@ function Dashboard() {
 
               <button
                 onClick={() =>
-                  window.location.href =
-                    "/create-trip"
+                  (window.location.href = "/create-trip")
                 }
               >
                 Create My First Trip ✈️
@@ -163,53 +155,28 @@ function Dashboard() {
   }
 
   // =========================================
-  // BUDGET
+  // CALCULATIONS
   // =========================================
 
-  const tripBudget =
-    Number(trip.budget) || 0;
+  const tripBudget = Number(trip.budget) || 0;
 
-  // =========================================
-  // EXPENSE SPENDING
-  // =========================================
+  const expenseSpending = expenses.reduce(
+    (total, expense) =>
+      total + Number(expense.amount || 0),
+    0
+  );
 
-  const expenseSpending =
-    expenses.reduce(
-      (total, expense) =>
-        total +
-        Number(expense.amount || 0),
-      0
-    );
-
-  // =========================================
-  // ITINERARY COST
-  // =========================================
-
-  const itineraryCost =
-    itinerary.reduce(
-      (total, item) =>
-        total +
-        Number(item.cost || 0),
-      0
-    );
-
-  // =========================================
-  // TOTAL SPENDING
-  // =========================================
+  const itineraryCost = itinerary.reduce(
+    (total, item) =>
+      total + Number(item.cost || 0),
+    0
+  );
 
   const totalSpending =
     expenseSpending + itineraryCost;
 
-  // =========================================
-  // REMAINING BUDGET
-  // =========================================
-
   const remainingBudget =
     tripBudget - totalSpending;
-
-  // =========================================
-  // BUDGET USED
-  // =========================================
 
   const budgetUsed =
     tripBudget > 0
@@ -227,49 +194,35 @@ function Dashboard() {
   // =========================================
 
   let budgetStatus = "On Track";
-
   let budgetMessage =
     "You're comfortably within your trip budget.";
 
-  if (
-    budgetUsed >= 50 &&
-    budgetUsed < 80
-  ) {
+  if (budgetUsed >= 50 && budgetUsed < 80) {
     budgetStatus = "Watch Spending";
-
     budgetMessage =
       "You're using a good amount of your budget. Keep an eye on spending.";
   }
 
-  if (
-    budgetUsed >= 80 &&
-    budgetUsed < 100
-  ) {
+  if (budgetUsed >= 80 && budgetUsed < 100) {
     budgetStatus = "Budget Warning";
-
     budgetMessage =
       "Your remaining budget is getting low.";
   }
 
   if (budgetUsed >= 100) {
     budgetStatus = "Over Budget";
-
     budgetMessage =
       "You've reached or exceeded your planned budget.";
   }
 
   // =========================================
-  // RECENT EXPENSES
+  // RECENT DATA
   // =========================================
 
   const recentExpenses = expenses
     .slice()
     .reverse()
     .slice(0, 4);
-
-  // =========================================
-  // UPCOMING ITINERARY
-  // =========================================
 
   const upcomingActivities =
     itinerary.slice(0, 4);
@@ -291,32 +244,15 @@ function Dashboard() {
   return (
     <div>
 
-      {/* =================================
-          NAVBAR
-      ================================= */}
-
       <Navbar />
-
-
-      {/* =================================
-          APP LAYOUT
-      ================================= */}
 
       <div className="app-layout">
 
         <Sidebar />
 
-
-        {/* =================================
-            MAIN CONTENT
-        ================================= */}
-
         <main className="main-content">
 
-
-          {/* =================================
-              WELCOME / TRIP HEADER
-          ================================= */}
+          {/* TRIP HEADER */}
 
           <div className="dashboard-welcome">
 
@@ -343,9 +279,7 @@ function Dashboard() {
           </div>
 
 
-          {/* =================================
-              SUMMARY CARDS
-          ================================= */}
+          {/* SUMMARY CARDS */}
 
           <div className="cards">
 
@@ -362,19 +296,14 @@ function Dashboard() {
             <DashboardCard
               title="Remaining"
               value={formatMoney(
-                Math.max(
-                  remainingBudget,
-                  0
-                )
+                Math.max(remainingBudget, 0)
               )}
             />
 
           </div>
 
 
-          {/* =================================
-              BUDGET HEALTH
-          ================================= */}
+          {/* BUDGET HEALTH */}
 
           <div
             className={`budget-health ${
@@ -420,18 +349,13 @@ function Dashboard() {
             <div className="budget-health-footer">
 
               <span>
-                {formatMoney(totalSpending)}
-                {" "}spent
+                {formatMoney(totalSpending)} spent
               </span>
 
               <span>
                 {formatMoney(
-                  Math.max(
-                    remainingBudget,
-                    0
-                  )
-                )}
-                {" "}remaining
+                  Math.max(remainingBudget, 0)
+                )} remaining
               </span>
 
             </div>
@@ -439,16 +363,13 @@ function Dashboard() {
           </div>
 
 
-          {/* =================================
-              QUICK ACTIONS
-          ================================= */}
+          {/* QUICK ACTIONS */}
 
           <div className="dashboard-section">
 
             <div className="section-heading">
 
               <div>
-
                 <h2>
                   Quick Actions
                 </h2>
@@ -456,7 +377,6 @@ function Dashboard() {
                 <p>
                   Manage your trip from one place.
                 </p>
-
               </div>
 
             </div>
@@ -464,16 +384,10 @@ function Dashboard() {
 
             <div className="quick-actions">
 
-              {/* EXPENSES */}
-
               <a href="/expenses">
-
-                <span>
-                  💸
-                </span>
+                <span>💸</span>
 
                 <div>
-
                   <strong>
                     Expenses
                   </strong>
@@ -481,26 +395,16 @@ function Dashboard() {
                   <small>
                     Track your spending
                   </small>
-
                 </div>
 
-                <b>
-                  →
-                </b>
-
+                <b>→</b>
               </a>
 
 
-              {/* GROUPS */}
-
               <a href="/groups">
-
-                <span>
-                  👥
-                </span>
+                <span>👥</span>
 
                 <div>
-
                   <strong>
                     Groups
                   </strong>
@@ -508,26 +412,16 @@ function Dashboard() {
                   <small>
                     Split expenses
                   </small>
-
                 </div>
 
-                <b>
-                  →
-                </b>
-
+                <b>→</b>
               </a>
 
 
-              {/* BUDGET */}
-
               <a href="/budget">
-
-                <span>
-                  📊
-                </span>
+                <span>📊</span>
 
                 <div>
-
                   <strong>
                     Budget
                   </strong>
@@ -535,26 +429,16 @@ function Dashboard() {
                   <small>
                     Monitor your budget
                   </small>
-
                 </div>
 
-                <b>
-                  →
-                </b>
-
+                <b>→</b>
               </a>
 
 
-              {/* ITINERARY */}
-
               <a href="/itinerary">
-
-                <span>
-                  🗓️
-                </span>
+                <span>🗓️</span>
 
                 <div>
-
                   <strong>
                     Itinerary
                   </strong>
@@ -562,26 +446,16 @@ function Dashboard() {
                   <small>
                     Plan your activities
                   </small>
-
                 </div>
 
-                <b>
-                  →
-                </b>
-
+                <b>→</b>
               </a>
 
 
-              {/* EXPLORE */}
-
               <a href="/explore">
-
-                <span>
-                  🌍
-                </span>
+                <span>🌍</span>
 
                 <div>
-
                   <strong>
                     Explore
                   </strong>
@@ -589,13 +463,9 @@ function Dashboard() {
                   <small>
                     Discover destinations
                   </small>
-
                 </div>
 
-                <b>
-                  →
-                </b>
-
+                <b>→</b>
               </a>
 
             </div>
@@ -603,16 +473,9 @@ function Dashboard() {
           </div>
 
 
-          {/* =================================
-              RECENT EXPENSES + ITINERARY
-          ================================= */}
+          {/* RECENT EXPENSES + ITINERARY */}
 
           <div className="dashboard-overview-grid">
-
-
-            {/* =================================
-                RECENT EXPENSES
-            ================================= */}
 
             <div className="dashboard-section">
 
@@ -641,9 +504,7 @@ function Dashboard() {
 
                 <div className="dashboard-empty-small">
 
-                  <span>
-                    💰
-                  </span>
+                  <span>💰</span>
 
                   <p>
                     No expenses yet.
@@ -665,8 +526,7 @@ function Dashboard() {
                       <div
                         className="dashboard-list-item"
                         key={
-                          expense.id ||
-                          index
+                          expense.id || index
                         }
                       >
 
@@ -702,10 +562,6 @@ function Dashboard() {
             </div>
 
 
-            {/* =================================
-                ITINERARY PREVIEW
-            ================================= */}
-
             <div className="dashboard-section">
 
               <div className="section-heading">
@@ -733,9 +589,7 @@ function Dashboard() {
 
                 <div className="dashboard-empty-small">
 
-                  <span>
-                    🗺️
-                  </span>
+                  <span>🗺️</span>
 
                   <p>
                     No activities planned yet.
@@ -757,8 +611,7 @@ function Dashboard() {
                       <div
                         className="dashboard-list-item"
                         key={
-                          item.id ||
-                          index
+                          item.id || index
                         }
                       >
 
@@ -777,12 +630,8 @@ function Dashboard() {
                         </div>
 
                         <strong>
-                          {Number(
-                            item.cost || 0
-                          ) > 0
-                            ? formatMoney(
-                                item.cost
-                              )
+                          {Number(item.cost || 0) > 0
+                            ? formatMoney(item.cost)
                             : "Free"}
                         </strong>
 
@@ -799,6 +648,12 @@ function Dashboard() {
 
           </div>
 
+
+          {/* =========================================
+              TRIPMITRA TRAVEL ASSISTANT
+          ========================================= */}
+
+          <TravelAssistant />
 
         </main>
 

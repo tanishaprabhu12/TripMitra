@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
+import Settlement from "../components/Settlement";
 
 function Groups() {
   const navigate = useNavigate();
@@ -20,9 +21,7 @@ function Groups() {
   // =========================================
 
   const savedTrip = currentUser
-    ? localStorage.getItem(
-        `trip_${currentUser.id}`
-      )
+    ? localStorage.getItem(`trip_${currentUser.id}`)
     : null;
 
   const trip = savedTrip
@@ -98,16 +97,10 @@ function Groups() {
 
     updateData();
 
-    window.addEventListener(
-      "storage",
-      updateData
-    );
+    window.addEventListener("storage", updateData);
 
     return () => {
-      window.removeEventListener(
-        "storage",
-        updateData
-      );
+      window.removeEventListener("storage", updateData);
     };
   }, [currentUser?.id]);
 
@@ -130,7 +123,6 @@ function Groups() {
         <Navbar />
 
         <div className="app-layout">
-
           <Sidebar />
 
           <main className="main-content">
@@ -157,7 +149,6 @@ function Groups() {
             </div>
 
           </main>
-
         </div>
       </div>
     );
@@ -177,52 +168,46 @@ function Groups() {
   // MEMBER SUMMARY
   // =========================================
 
-  const memberSummary = members.map(
-    (member) => {
+  const memberSummary = members.map((member) => {
 
-      let paid = 0;
-      let share = 0;
+    let paid = 0;
+    let share = 0;
 
-      expenses.forEach((expense) => {
+    expenses.forEach((expense) => {
 
-        const amount =
-          Number(expense.amount || 0);
+      const amount =
+        Number(expense.amount || 0);
 
-        const paidBy =
-          expense.paidBy ||
-          currentUser.name;
+      const paidBy =
+        expense.paidBy ||
+        currentUser.name;
 
-        const splitBetween =
-          expense.splitBetween ||
-          [paidBy];
+      const splitBetween =
+        expense.splitBetween ||
+        [paidBy];
 
-        // Amount this member paid
-        if (paidBy === member) {
-          paid += amount;
-        }
+      // Amount this member paid
+      if (paidBy === member) {
+        paid += amount;
+      }
 
-        // Amount this member owes
-        if (
-          splitBetween.includes(member)
-        ) {
-          share +=
-            amount /
-            splitBetween.length;
-        }
+      // Amount this member owes
+      if (splitBetween.includes(member)) {
+        share +=
+          amount /
+          splitBetween.length;
+      }
+    });
 
-      });
+    const balance = paid - share;
 
-      const balance =
-        paid - share;
-
-      return {
-        member,
-        paid,
-        share,
-        balance,
-      };
-    }
-  );
+    return {
+      member,
+      paid,
+      share,
+      balance,
+    };
+  });
 
   // =========================================
   // FORMAT MONEY
@@ -292,93 +277,91 @@ function Groups() {
 
           <div className="member-summary-grid">
 
-            {memberSummary.map(
-              (person) => (
+            {memberSummary.map((person) => (
 
-                <div
-                  className="member-summary-card"
-                  key={person.member}
-                >
+              <div
+                className="member-summary-card"
+                key={person.member}
+              >
 
-                  <div className="member-summary-header">
+                <div className="member-summary-header">
 
-                    <div className="member-avatar">
-                      👤
-                    </div>
-
-                    <div>
-
-                      <h2>
-                        {person.member}
-                      </h2>
-
-                      <span>
-                        Trip member
-                      </span>
-
-                    </div>
-
+                  <div className="member-avatar">
+                    👤
                   </div>
 
+                  <div>
 
-                  <div className="member-stat">
-
-                    <span>
-                      💳 Paid
-                    </span>
-
-                    <strong>
-                      {formatMoney(
-                        person.paid
-                      )}
-                    </strong>
-
-                  </div>
-
-
-                  <div className="member-stat">
+                    <h2>
+                      {person.member}
+                    </h2>
 
                     <span>
-                      📊 Fair Share
+                      Trip member
                     </span>
-
-                    <strong>
-                      {formatMoney(
-                        person.share
-                      )}
-                    </strong>
-
-                  </div>
-
-
-                  <div
-                    className={`member-balance ${
-                      person.balance >= 0
-                        ? "positive"
-                        : "negative"
-                    }`}
-                  >
-
-                    <span>
-                      {person.balance >= 0
-                        ? "💰 Gets back"
-                        : "💸 Owes"}
-                    </span>
-
-                    <strong>
-                      {formatMoney(
-                        Math.abs(
-                          person.balance
-                        )
-                      )}
-                    </strong>
 
                   </div>
 
                 </div>
 
-              )
-            )}
+
+                <div className="member-stat">
+
+                  <span>
+                    💳 Paid
+                  </span>
+
+                  <strong>
+                    {formatMoney(
+                      person.paid
+                    )}
+                  </strong>
+
+                </div>
+
+
+                <div className="member-stat">
+
+                  <span>
+                    📊 Fair Share
+                  </span>
+
+                  <strong>
+                    {formatMoney(
+                      person.share
+                    )}
+                  </strong>
+
+                </div>
+
+
+                <div
+                  className={`member-balance ${
+                    person.balance >= 0
+                      ? "positive"
+                      : "negative"
+                  }`}
+                >
+
+                  <span>
+                    {person.balance >= 0
+                      ? "💰 Gets back"
+                      : "💸 Owes"}
+                  </span>
+
+                  <strong>
+                    {formatMoney(
+                      Math.abs(
+                        person.balance
+                      )
+                    )}
+                  </strong>
+
+                </div>
+
+              </div>
+
+            ))}
 
           </div>
 
@@ -425,7 +408,7 @@ function Groups() {
                       expense.splitBetween ||
                       [
                         expense.paidBy ||
-                          currentUser.name,
+                        currentUser.name,
                       ];
 
                     const share =
@@ -446,8 +429,7 @@ function Groups() {
 
                         <div className="expense-category-icon">
 
-                          {expense.category ===
-                          "Food"
+                          {expense.category === "Food"
                             ? "🍴"
                             : expense.category ===
                               "Accommodation"
@@ -458,6 +440,9 @@ function Groups() {
                             : expense.category ===
                               "Activities"
                             ? "🎟️"
+                            : expense.category ===
+                              "Shopping"
+                            ? "🛍️"
                             : "💳"}
 
                         </div>
@@ -490,17 +475,13 @@ function Groups() {
                           <strong>
                             {formatMoney(
                               Number(
-                                expense.amount ||
-                                  0
+                                expense.amount || 0
                               )
                             )}
                           </strong>
 
                           <small>
-                            {formatMoney(
-                              share
-                            )}{" "}
-                            each
+                            {formatMoney(share)} each
                           </small>
 
                         </div>
@@ -515,6 +496,16 @@ function Groups() {
             )}
 
           </div>
+
+
+          {/* =================================
+              SETTLEMENT
+          ================================= */}
+
+          <Settlement
+            expenses={expenses}
+          />
+
 
         </main>
 

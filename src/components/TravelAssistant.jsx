@@ -1,23 +1,328 @@
 import { useState } from "react";
 
 function TravelAssistant() {
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState([
-    {
-      type: "assistant",
-      text: "Hi! 👋 I'm your TripMitra Travel Assistant. Ask me anything about your trip!"
-    }
-  ]);
 
-  const trip = JSON.parse(
-    localStorage.getItem("trip") || "null"
+  // =========================================
+  // CURRENT USER
+  // =========================================
+
+  const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
   );
 
-  function generateAnswer(question) {
-    const q = question.toLowerCase();
+  const userId = currentUser?.id || "guest";
+
+
+  // =========================================
+  // USER-SPECIFIC KEYS
+  // =========================================
+
+  const tripKey =
+    currentUser
+      ? `trip_${currentUser.id}`
+      : "trip";
+
+  const expensesKey =
+    currentUser
+      ? `tripExpenses_${currentUser.id}`
+      : "tripExpenses";
+
+  const itineraryKey =
+    currentUser
+      ? `tripItinerary_${currentUser.id}`
+      : "tripItinerary";
+
+  const savingsTargetKey =
+    currentUser
+      ? `savingsTarget_${currentUser.id}`
+      : "savingsTarget";
+
+  const savingsSavedKey =
+    currentUser
+      ? `savingsSaved_${currentUser.id}`
+      : "savingsSaved";
+
+
+  // =========================================
+  // LOAD TRIP
+  // =========================================
+
+  const trip = JSON.parse(
+    localStorage.getItem(tripKey) || "null"
+  );
+
+
+  // =========================================
+  // LOAD EXPENSES
+  // =========================================
+
+  const expenses = JSON.parse(
+    localStorage.getItem(expensesKey) || "[]"
+  );
+
+
+  // =========================================
+  // LOAD ITINERARY
+  // =========================================
+
+  const itinerary = JSON.parse(
+    localStorage.getItem(itineraryKey) || "[]"
+  );
+
+
+  // =========================================
+  // LOAD SAVINGS
+  // =========================================
+
+  const savingsTarget =
+    Number(
+      localStorage.getItem(
+        savingsTargetKey
+      )
+    ) || 0;
+
+  const savingsSaved =
+    Number(
+      localStorage.getItem(
+        savingsSavedKey
+      )
+    ) || 0;
+
+
+  // =========================================
+  // CALCULATIONS
+  // =========================================
+
+  const tripBudget =
+    Number(trip?.budget) || 0;
+
+  const totalExpenses =
+    expenses.reduce(
+      (total, expense) =>
+        total +
+        Number(
+          expense.amount || 0
+        ),
+      0
+    );
+
+  const itineraryCost =
+    itinerary.reduce(
+      (total, item) =>
+        total +
+        Number(
+          item.cost || 0
+        ),
+      0
+    );
+
+  const totalPlannedSpending =
+    totalExpenses +
+    itineraryCost;
+
+  const remainingBudget =
+    tripBudget -
+    totalPlannedSpending;
+
+
+  // =========================================
+  // CHAT STATE
+  // =========================================
+
+  const [question, setQuestion] =
+    useState("");
+
+  const [messages, setMessages] =
+    useState([
+      {
+        type: "assistant",
+        text: trip
+          ? `Hi! 👋 I'm your TripMitra Travel Assistant.
+
+I can help you plan your ${trip.destination} trip, manage your budget, organize your itinerary and more! ✈️`
+          : `Hi! 👋 I'm your TripMitra Travel Assistant.
+
+Create a trip first and I'll be able to give you personalized travel suggestions!`
+      }
+    ]);
+
+
+  // =========================================
+  // FORMAT MONEY
+  // =========================================
+
+  function formatMoney(amount) {
+
+    return `₹${Number(
+      amount
+    ).toLocaleString(
+      "en-IN",
+      {
+        maximumFractionDigits: 2,
+      }
+    )}`;
+
+  }
+
+
+  // =========================================
+  // GENERATE ANSWER
+  // =========================================
+
+  function generateAnswer(questionText) {
+
+    const q =
+      questionText.toLowerCase();
+
 
     const destination =
-      trip?.destination || "your destination";
+      trip?.destination ||
+      "your destination";
+
+
+    // =========================================
+    // NO TRIP
+    // =========================================
+
+    if (!trip) {
+
+      return `I don't see an active trip yet. ✈️
+
+Create a trip first and I'll be able to help you with:
+
+• Itineraries
+• Budget planning
+• Activities
+• Packing
+• Saving money
+• Places to visit
+
+Once your trip is created, ask me again! 😊`;
+
+    }
+
+
+    // =========================================
+    // CURRENT TRIP
+    // =========================================
+
+    if (
+      q.includes("my trip") ||
+      q.includes("trip details") ||
+      q.includes("what is my trip")
+    ) {
+
+      return `Here's your current trip ✈️
+
+📍 Destination: ${destination}
+
+👥 Travelers: ${
+        trip.travelers || "Not specified"
+      }
+
+📅 Dates: ${
+        trip.startDate || "Not set"
+      } → ${
+        trip.endDate || "Not set"
+      }
+
+💰 Trip Budget: ${
+        formatMoney(tripBudget)
+      }
+
+💸 Current Spending: ${
+        formatMoney(totalExpenses)
+      }
+
+🗓️ Planned Activities: ${
+        itinerary.length
+      }
+
+You can ask me about your budget, itinerary, activities or packing!`;
+
+    }
+
+
+    // =========================================
+    // BUDGET STATUS
+    // =========================================
+
+    if (
+      q.includes("budget status") ||
+      q.includes("how much have i spent") ||
+      q.includes("how much left") ||
+      q.includes("remaining budget") ||
+      q.includes("how much money")
+    ) {
+
+      if (tripBudget <= 0) {
+
+        return `I don't see a trip budget set yet. 💰
+
+Set your budget on the Trip Budget page and I'll be able to track it for you.`;
+
+      }
+
+
+      const percentage =
+        (
+          totalPlannedSpending /
+          tripBudget
+        ) *
+        100;
+
+
+      if (
+        totalPlannedSpending >
+        tripBudget
+      ) {
+
+        return `🚨 Budget Alert
+
+Your trip budget is ${
+          formatMoney(tripBudget)
+        }.
+
+You've currently planned/spent ${
+          formatMoney(totalPlannedSpending)
+        }.
+
+You're ${
+          formatMoney(
+            totalPlannedSpending -
+            tripBudget
+          )
+        } over your budget.
+
+Consider reducing optional activities or expenses.`;
+
+      }
+
+
+      return `💰 Your ${destination} budget
+
+Total Budget:
+${formatMoney(tripBudget)}
+
+Actual Expenses:
+${formatMoney(totalExpenses)}
+
+Planned Itinerary Costs:
+${formatMoney(itineraryCost)}
+
+Total Planned Spending:
+${formatMoney(totalPlannedSpending)}
+
+Remaining:
+${formatMoney(remainingBudget)}
+
+You've used approximately ${Math.max(
+        percentage,
+        0
+      ).toFixed(0)}% of your budget.`;
+
+    }
+
 
     // =========================================
     // ITINERARY
@@ -29,24 +334,73 @@ function TravelAssistant() {
       q.includes("3-day") ||
       q.includes("plan my trip")
     ) {
-      return `Here's a simple itinerary for ${destination} ✈️
+
+      return `Here's a simple 3-day plan for ${destination} ✈️
 
 Day 1 🌅
 • Explore the main attractions
 • Try local food
+• Visit a scenic location
 • Relax in the evening
 
 Day 2 🌴
 • Visit popular tourist spots
 • Try a local activity
-• Enjoy dinner at a local restaurant
+• Explore local markets
+• Enjoy dinner
 
 Day 3 🌊
-• Visit a scenic location
+• Visit another scenic location
 • Shopping / souvenirs
+• Take photos
 • Relax before your journey home
 
-You can also add these activities to your Trip Itinerary section!`;
+You can add these activities to your Trip Itinerary page and assign estimated costs to them.`;
+
+    }
+
+
+    // =========================================
+    // EXISTING ITINERARY
+    // =========================================
+
+    if (
+      q.includes("planned activities") ||
+      q.includes("what have i planned") ||
+      q.includes("my itinerary")
+    ) {
+
+      if (
+        itinerary.length === 0
+      ) {
+
+        return `You haven't added any activities to your itinerary yet. 🗓️
+
+Go to the Itinerary page and start adding activities!`;
+
+      }
+
+
+      const activityList =
+        itinerary
+          .slice(0, 8)
+          .map(
+            (item) =>
+              `• ${item.day}: ${item.activity} — ${item.location}`
+          )
+          .join("\n");
+
+
+      return `Here's what's currently planned for your trip 🗓️
+
+${activityList}
+
+Total planned activities:
+${itinerary.length}
+
+Total planned activity cost:
+${formatMoney(itineraryCost)}`;
+
     }
 
 
@@ -59,43 +413,56 @@ You can also add these activities to your Trip Itinerary section!`;
       q.includes("packing") ||
       q.includes("bring")
     ) {
-      return `Here's a basic packing checklist 🎒
 
-☐ Clothes
+      return `Here's a basic packing checklist for ${destination} 🎒
+
+☐ Comfortable clothes
 ☐ Comfortable shoes
 ☐ Phone charger
 ☐ Power bank
 ☐ ID / important documents
 ☐ Toiletries
-☐ Medicines you normally need
+☐ Any medicines you normally use
 ☐ Water bottle
 ☐ Sunglasses
 ☐ Small backpack
 
-Don't forget to check the weather before you leave! ☀️`;
+Also check the weather forecast before you leave! ☀️`;
+
     }
 
 
     // =========================================
-    // BUDGET
+    // SAVE MONEY
     // =========================================
 
     if (
       q.includes("save money") ||
       q.includes("cheap") ||
-      q.includes("budget") ||
-      q.includes("saving")
+      q.includes("saving") ||
+      q.includes("reduce spending")
     ) {
+
       return `Here are some ways to save money on your ${destination} trip 💰
 
 1. Set a daily spending limit.
 2. Compare transport options.
 3. Eat at local restaurants instead of only tourist spots.
 4. Book popular activities in advance when possible.
-5. Keep some money aside for emergencies.
+5. Avoid unnecessary impulse purchases.
 6. Track every expense in TripMitra.
+7. Keep some money aside for emergencies.
 
-Your TripMitra dashboard can help you keep track of your budget!`;
+Your current planned spending is ${
+        formatMoney(
+          totalPlannedSpending
+        )
+      }.
+
+Your trip budget is ${
+        formatMoney(tripBudget)
+      }.`;
+
     }
 
 
@@ -109,6 +476,7 @@ Your TripMitra dashboard can help you keep track of your budget!`;
       q.includes("places") ||
       q.includes("visit")
     ) {
+
       return `Here are some ideas for ${destination} 🌍
 
 📍 Explore popular landmarks
@@ -119,7 +487,8 @@ Your TripMitra dashboard can help you keep track of your budget!`;
 🎟️ Try a local activity
 🌅 Watch the sunset
 
-You can add your favourite activities to the Trip Itinerary section.`;
+If you find something you like, add it to your Trip Itinerary.`;
+
     }
 
 
@@ -132,16 +501,74 @@ You can add your favourite activities to the Trip Itinerary section.`;
       q.includes("eat") ||
       q.includes("restaurant")
     ) {
+
       return `For ${destination}, try exploring local food experiences 🍴
 
 Look for:
+
 • Local specialties
 • Popular street food
 • Highly-rated local restaurants
 • Vegetarian options if needed
 • Cafes near your sightseeing locations
 
-Tip: Check reviews before choosing a restaurant.`;
+Tip: Check current reviews and opening hours before visiting a restaurant.`;
+
+    }
+
+
+    // =========================================
+    // SAVINGS
+    // =========================================
+
+    if (
+      q.includes("savings") ||
+      q.includes("saved") ||
+      q.includes("saving goal")
+    ) {
+
+      if (
+        savingsTarget <= 0
+      ) {
+
+        return `You don't have a savings goal set yet. 🎯
+
+Go to the Savings page and create one.`;
+
+      }
+
+
+      const savingsPercentage =
+        (
+          savingsSaved /
+          savingsTarget
+        ) *
+        100;
+
+
+      return `🎯 Your Savings Goal
+
+Target:
+${formatMoney(savingsTarget)}
+
+Saved:
+${formatMoney(savingsSaved)}
+
+Remaining:
+${formatMoney(
+        Math.max(
+          savingsTarget -
+          savingsSaved,
+          0
+        )
+      )}
+
+Progress:
+${Math.min(
+        savingsPercentage,
+        100
+      ).toFixed(0)}%`;
+
     }
 
 
@@ -154,12 +581,17 @@ Tip: Check reviews before choosing a restaurant.`;
 Try asking me:
 
 • "Give me a 3-day itinerary"
+• "What is my trip?"
+• "What's my budget status?"
+• "What activities have I planned?"
 • "What should I pack?"
 • "How can I save money?"
-• "What things should I visit?"
+• "What places should I visit?"
 • "What food should I try?"
+• "How much have I saved?"
 
 I'm here to help you plan your trip! 😊`;
+
   }
 
 
@@ -168,33 +600,47 @@ I'm here to help you plan your trip! 😊`;
   // =========================================
 
   function handleSubmit(event) {
+
     event.preventDefault();
 
-    if (!question.trim()) {
+    if (
+      !question.trim()
+    ) {
       return;
     }
 
-    const userQuestion = question.trim();
 
-    const answer = generateAnswer(
-      userQuestion
+    const userQuestion =
+      question.trim();
+
+
+    const answer =
+      generateAnswer(
+        userQuestion
+      );
+
+
+    setMessages(
+      (currentMessages) => [
+
+        ...currentMessages,
+
+        {
+          type: "user",
+          text: userQuestion,
+        },
+
+        {
+          type: "assistant",
+          text: answer,
+        },
+
+      ]
     );
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
-
-      {
-        type: "user",
-        text: userQuestion
-      },
-
-      {
-        type: "assistant",
-        text: answer
-      }
-    ]);
 
     setQuestion("");
+
   }
 
 
@@ -203,28 +649,40 @@ I'm here to help you plan your trip! 😊`;
   // =========================================
 
   function askQuestion(text) {
-    setQuestion(text);
 
-    const answer = generateAnswer(text);
+    const answer =
+      generateAnswer(text);
 
-    setMessages((currentMessages) => [
-      ...currentMessages,
 
-      {
-        type: "user",
-        text
-      },
+    setMessages(
+      (currentMessages) => [
 
-      {
-        type: "assistant",
-        text: answer
-      }
-    ]);
+        ...currentMessages,
+
+        {
+          type: "user",
+          text,
+        },
+
+        {
+          type: "assistant",
+          text: answer,
+        },
+
+      ]
+    );
+
   }
 
 
+  // =========================================
+  // RENDER
+  // =========================================
+
   return (
+
     <section className="travel-assistant">
+
 
       {/* HEADER */}
 
@@ -235,13 +693,16 @@ I'm here to help you plan your trip! 😊`;
         </div>
 
         <div>
+
           <h2>
             TripMitra AI Assistant
           </h2>
 
           <p>
-            Your personal travel planning buddy ✈️
+            Your personal travel planning
+            buddy ✈️
           </p>
+
         </div>
 
       </div>
@@ -271,15 +732,26 @@ I'm here to help you plan your trip! 😊`;
 
               </div>
 
+
               <div className="message-text">
 
                 {message.text
                   .split("\n")
-                  .map((line, lineIndex) => (
-                    <div key={lineIndex}>
-                      {line || "\u00A0"}
-                    </div>
-                  ))}
+                  .map(
+                    (
+                      line,
+                      lineIndex
+                    ) => (
+
+                      <div
+                        key={lineIndex}
+                      >
+                        {line ||
+                          "\u00A0"}
+                      </div>
+
+                    )
+                  )}
 
               </div>
 
@@ -296,6 +768,7 @@ I'm here to help you plan your trip! 😊`;
       <div className="quick-questions">
 
         <button
+          type="button"
           onClick={() =>
             askQuestion(
               "Give me a 3-day itinerary"
@@ -305,7 +778,33 @@ I'm here to help you plan your trip! 😊`;
           🗓️ 3-Day Itinerary
         </button>
 
+
         <button
+          type="button"
+          onClick={() =>
+            askQuestion(
+              "What's my budget status?"
+            )
+          }
+        >
+          💰 Budget Status
+        </button>
+
+
+        <button
+          type="button"
+          onClick={() =>
+            askQuestion(
+              "What activities have I planned?"
+            )
+          }
+        >
+          🗺️ My Itinerary
+        </button>
+
+
+        <button
+          type="button"
           onClick={() =>
             askQuestion(
               "What should I pack?"
@@ -315,20 +814,24 @@ I'm here to help you plan your trip! 😊`;
           🎒 Packing List
         </button>
 
+
         <button
+          type="button"
           onClick={() =>
             askQuestion(
               "How can I save money?"
             )
           }
         >
-          💰 Save Money
+          💸 Save Money
         </button>
 
+
         <button
+          type="button"
           onClick={() =>
             askQuestion(
-              "What things should I visit?"
+              "What places should I visit?"
             )
           }
         >
@@ -342,7 +845,9 @@ I'm here to help you plan your trip! 😊`;
 
       <form
         className="assistant-input"
-        onSubmit={handleSubmit}
+        onSubmit={
+          handleSubmit
+        }
       >
 
         <input
@@ -350,9 +855,12 @@ I'm here to help you plan your trip! 😊`;
           placeholder="Ask TripMitra anything..."
           value={question}
           onChange={(event) =>
-            setQuestion(event.target.value)
+            setQuestion(
+              event.target.value
+            )
           }
         />
+
 
         <button type="submit">
           Send 🚀
@@ -361,7 +869,9 @@ I'm here to help you plan your trip! 😊`;
       </form>
 
     </section>
+
   );
+
 }
 
 export default TravelAssistant;
