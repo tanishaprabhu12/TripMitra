@@ -3494,3 +3494,954 @@ body {
   }
 
 }
+
+/* =========================================================
+   MODERN EXPENSES PAGE
+   ========================================================= */
+
+.expenses-decoration {
+  font-size: 55px;
+}
+
+
+/* =========================================================
+   TOTAL BANNER
+   ========================================================= */
+
+.expenses-total-banner {
+  background:
+    linear-gradient(
+      135deg,
+      #f5f1ff,
+      #faf8ff
+    );
+
+  border: 1px solid #e3dcfa;
+
+  border-radius: 22px;
+
+  padding: 28px 32px;
+
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 20px;
+
+  box-shadow:
+    0 8px 25px rgba(
+      80,
+      55,
+      150,
+      0.05
+    );
+}
+
+.expenses-total-banner span {
+  display: block;
+
+  font-size: 11px;
+
+  font-weight: 800;
+
+  letter-spacing: 1.2px;
+
+  color: #7357d8;
+
+  margin-bottom: 7px;
+}
+
+.expenses-total-banner strong {
+  display: block;
+
+  font-size: 34px;
+
+  color: #33235f;
+}
+
+.expenses-total-banner small {
+  display: block;
+
+  margin-top: 5px;
+
+  color: #888;
+
+  font-size: 12px;
+}
+
+.expenses-total-icon {
+  font-size: 55px;
+}
+
+
+/* =========================================================
+   EXPENSE FORM
+   ========================================================= */
+
+.expense-form-icon {
+  font-size: 40px;
+}
+
+.modern-expense-form {
+  margin-top: 28px;
+
+  display: grid;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
+  gap: 18px;
+}
+
+.expense-form-field {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 7px;
+}
+
+.expense-form-field label,
+.expense-split-section label {
+  font-size: 12px;
+
+  font-weight: 800;
+
+  color: #555;
+}
+
+.expense-form-field input,
+.expense-form-field select {
+  box-sizing: border-box;
+
+  width: 100%;
+
+  padding: 13px 14px;
+
+  border: 1px solid #ddd;
+
+  border-radius: 11px;
+
+  background: white;
+
+  outline: none;
+
+  font-size: 14px;
+}
+
+.expense-form-field input:focus,
+.expense-form-field select:focus {
+  border-color: #8067d9;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(128, 103, 217, 0.08);
+}
+
+.expense-description-field {
+  grid-column: span 2;
+}
+
+
+/* =========================================================
+   MONEY INPUT
+   ========================================================= */
+
+.expense-money-input {
+  display: flex;
+
+  align-items: center;
+
+  border: 1px solid #ddd;
+
+  border-radius: 11px;
+
+  overflow: hidden;
+
+  background: white;
+}
+
+.expense-money-input span {
+  padding: 0 13px;
+
+  color: #777;
+
+  font-weight: 800;
+}
+
+.expense-money-input input {
+  border: none !important;
+
+  box-shadow: none !important;
+
+  border-radius: 0 !important;
+}
+
+
+/* =========================================================
+   SPLIT SECTION
+   ========================================================= */
+
+.expense-split-section {
+  grid-column: span 2;
+
+  background: #fafafa;
+
+  border: 1px solid #eee;
+
+  border-radius: 15px;
+
+  padding: 18px;
+}
+
+.split-heading {
+  display: flex;
+
+  justify-content: space-between;
+
+  align-items: center;
+
+  margin-bottom: 14px;
+}
+
+.split-heading > div {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 4px;
+}
+
+.split-heading span {
+  font-size: 11px;
+
+  color: #999;
+}
+
+.split-heading > strong {
+  color: #4c9959;
+
+  font-size: 13px;
+}
+
+.modern-member-grid {
+  display: flex;
+
+  flex-wrap: wrap;
+
+  gap: 9px;
+}
+
+.modern-member {
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  padding: 9px 12px;
+
+  border-radius: 10px;
+
+  border: 1px solid #ddd;
+
+  background: white;
+
+  color: #555;
+
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    0.2s ease;
+}
+
+.modern-member:hover {
+  border-color: #8067d9;
+
+  background: #f8f5ff;
+}
+
+.modern-member.selected {
+  border-color: #8067d9;
+
+  background: #f1edff;
+
+  color: #624bc0;
+}
+
+.member-check {
+  font-weight: 900;
+
+  color: #5a9d64;
+}
+
+
+/* =========================================================
+   SUBMIT
+   ========================================================= */
+
+.modern-expense-submit {
+  grid-column: span 2;
+
+  border: none;
+
+  border-radius: 12px;
+
+  padding: 14px;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7357d8,
+      #8c73e5
+    );
+
+  color: white;
+
+  font-size: 14px;
+
+  font-weight: 800;
+
+  cursor: pointer;
+
+  box-shadow:
+    0 8px 18px
+    rgba(
+      115,
+      87,
+      216,
+      0.18
+    );
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.modern-expense-submit:hover {
+  transform: translateY(-1px);
+
+  box-shadow:
+    0 11px 22px
+    rgba(
+      115,
+      87,
+      216,
+      0.24
+    );
+}
+
+
+/* =========================================================
+   CATEGORY GRID
+   ========================================================= */
+
+.expense-category-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, 1fr);
+
+  gap: 13px;
+}
+
+.expense-category-card {
+  background: #fafafa;
+
+  border: 1px solid #eee;
+
+  border-radius: 15px;
+
+  padding: 17px;
+}
+
+.expense-category-top {
+  display: flex;
+
+  align-items: center;
+
+  gap: 10px;
+
+  margin-bottom: 14px;
+}
+
+.expense-category-icon {
+  width: 38px;
+
+  height: 38px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  background: white;
+
+  border-radius: 11px;
+
+  font-size: 20px;
+
+  box-shadow:
+    0 3px 10px
+    rgba(0, 0, 0, 0.04);
+}
+
+.expense-category-top div:last-child {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+}
+
+.expense-category-top span {
+  font-size: 13px;
+
+  font-weight: 800;
+}
+
+.expense-category-top small {
+  color: #999;
+
+  font-size: 10px;
+}
+
+.expense-category-card > strong {
+  display: block;
+
+  font-size: 19px;
+
+  margin-bottom: 10px;
+}
+
+.category-mini-progress {
+  height: 6px;
+
+  border-radius: 10px;
+
+  background: #e9eceb;
+
+  overflow: hidden;
+}
+
+.category-mini-progress div {
+  height: 100%;
+
+  border-radius: 10px;
+
+  background:
+    linear-gradient(
+      90deg,
+      #7357d8,
+      #9a86e9
+    );
+}
+
+
+/* =========================================================
+   EXPENSE HISTORY
+   ========================================================= */
+
+.modern-expense-list {
+  display: flex;
+
+  flex-direction: column;
+}
+
+.modern-expense-item {
+  display: grid;
+
+  grid-template-columns:
+    auto
+    1fr
+    auto
+    auto;
+
+  align-items: center;
+
+  gap: 15px;
+
+  padding: 17px 0;
+
+  border-bottom: 1px solid #eee;
+}
+
+.modern-expense-item:last-child {
+  border-bottom: none;
+}
+
+.modern-expense-icon {
+  width: 46px;
+
+  height: 46px;
+
+  border-radius: 13px;
+
+  background: #f6f3ff;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 23px;
+}
+
+.modern-expense-info {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 3px;
+
+  min-width: 0;
+}
+
+.modern-expense-info > strong {
+  font-size: 14px;
+}
+
+.modern-expense-info > span {
+  font-size: 11px;
+
+  color: #7357d8;
+
+  font-weight: 700;
+}
+
+.modern-expense-info > small {
+  color: #999;
+
+  font-size: 10px;
+
+  margin-top: 2px;
+}
+
+.modern-expense-info > small strong {
+  color: #666;
+}
+
+.modern-expense-amount {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: flex-end;
+
+  gap: 4px;
+}
+
+.modern-expense-amount > strong {
+  font-size: 16px;
+}
+
+.modern-expense-amount small {
+  font-size: 10px;
+
+  color: #999;
+}
+
+.modern-delete-expense {
+  border: none;
+
+  background: #fff3f1;
+
+  width: 35px;
+
+  height: 35px;
+
+  border-radius: 9px;
+
+  cursor: pointer;
+
+  opacity: 0.75;
+
+  transition: 0.2s ease;
+}
+
+.modern-delete-expense:hover {
+  opacity: 1;
+
+  background: #ffe5e1;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 900px) {
+
+  .expense-category-grid {
+    grid-template-columns:
+      repeat(2, 1fr);
+  }
+
+}
+
+
+@media (max-width: 700px) {
+
+  .expenses-decoration {
+    display: none;
+  }
+
+  .modern-expense-form {
+    grid-template-columns: 1fr;
+  }
+
+  .expense-description-field,
+  .expense-split-section,
+  .modern-expense-submit {
+    grid-column: span 1;
+  }
+
+  .expense-category-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-expense-item {
+    grid-template-columns:
+      auto
+      1fr
+      auto;
+  }
+
+  .modern-delete-expense {
+    grid-column: 3;
+    grid-row: 1;
+  }
+
+}
+
+
+@media (max-width: 500px) {
+
+  .expenses-total-banner {
+    padding: 22px;
+
+  }
+
+  .expenses-total-banner strong {
+    font-size: 28px;
+  }
+
+  .expenses-total-icon {
+    font-size: 40px;
+  }
+
+  .modern-expense-item {
+    gap: 10px;
+  }
+
+  .modern-expense-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 19px;
+  }
+
+  .modern-expense-info > small {
+    display: none;
+  }
+
+}
+
+/* =========================================================
+   MODERN GROUPS PAGE
+   ========================================================= */
+
+.groups-decoration {
+  font-size: 55px;
+}
+
+
+/* =========================================================
+   GROUP STATISTICS
+   ========================================================= */
+
+.group-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+.group-stat-card {
+  position: relative;
+  padding: 22px;
+  border-radius: 18px;
+  background: white;
+  border: 1px solid #eee;
+  overflow: hidden;
+}
+
+.group-stat-card::after {
+  content: "";
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  right: -25px;
+  bottom: -30px;
+  opacity: 0.08;
+  background: currentColor;
+}
+
+.group-stat-icon {
+  font-size: 24px;
+  margin-bottom: 12px;
+}
+
+.group-stat-card span {
+  display: block;
+  font-size: 13px;
+  color: #555;
+}
+
+.group-stat-card strong {
+  display: block;
+  font-size: 25px;
+  margin-top: 5px;
+}
+
+.group-stat-card small {
+  display: block;
+  margin-top: 5px;
+  color: #888;
+}
+
+.group-stat-card.purple {
+  color: #7357d8;
+  background: #fbf9ff;
+  border-color: #dfd4ff;
+}
+
+.group-stat-card.green {
+  color: #4c9859;
+  background: #f8fcf8;
+  border-color: #d9eedc;
+}
+
+.group-stat-card.blue {
+  color: #3777d6;
+  background: #f7faff;
+  border-color: #d7e5ff;
+}
+
+
+/* =========================================================
+   MEMBERS
+   ========================================================= */
+
+.group-members-card {
+  margin-bottom: 20px;
+}
+
+.members-count {
+  background: #f0edff;
+  color: #7357d8;
+  padding: 8px 13px;
+  border-radius: 20px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.members-count span {
+  font-weight: 500;
+  color: #8879bd;
+}
+
+
+/* =========================================================
+   MEMBER LIST
+   ========================================================= */
+
+.modern-group-member-list {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.modern-group-member {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  background: #fafafa;
+  border: 1px solid #eee;
+  border-radius: 14px;
+  transition: 0.2s ease;
+}
+
+.modern-group-member:hover {
+  border-color: #d9d0f5;
+  background: #fbfaff;
+}
+
+.group-member-avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #f0edff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+}
+
+.group-member-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex: 1;
+}
+
+.group-member-info strong {
+  font-size: 14px;
+}
+
+.group-member-info span {
+  width: fit-content;
+  font-size: 10px;
+  padding: 3px 7px;
+  border-radius: 10px;
+  background: #eaf7ed;
+  color: #4c9859;
+  font-weight: 700;
+}
+
+.modern-remove-member {
+  border: none;
+  background: #fff0ee;
+  color: #d65c50;
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.modern-remove-member:hover {
+  background: #ffe0dc;
+  transform: scale(1.05);
+}
+
+
+/* =========================================================
+   ADD MEMBER
+   ========================================================= */
+
+.modern-add-member-form {
+  display: flex;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.modern-add-member-form input {
+  flex: 1;
+  padding: 13px 14px;
+  border: 1px solid #ddd;
+  border-radius: 11px;
+  outline: none;
+  font-size: 14px;
+}
+
+.modern-add-member-form input:focus {
+  border-color: #8067d9;
+  box-shadow:
+    0 0 0 3px
+    rgba(128, 103, 217, 0.08);
+}
+
+.modern-add-member-form button {
+  border: none;
+  border-radius: 11px;
+  padding: 0 20px;
+  background: #7357d8;
+  color: white;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.modern-add-member-form button:hover {
+  background: #624bc0;
+  transform: translateY(-1px);
+}
+
+
+/* =========================================================
+   INFO BANNER
+   ========================================================= */
+
+.group-info-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px 20px;
+  margin-bottom: 20px;
+  border-radius: 16px;
+  background: #fffaf0;
+  border: 1px solid #f5e6c5;
+}
+
+.group-info-icon {
+  font-size: 25px;
+}
+
+.group-info-banner strong {
+  display: block;
+  margin-bottom: 4px;
+  color: #80611f;
+}
+
+.group-info-banner p {
+  margin: 0;
+  color: #8d7b51;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+/* =========================================================
+   RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 800px) {
+
+  .group-stat-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .modern-group-member-list {
+    grid-template-columns: 1fr;
+  }
+
+  .groups-decoration {
+    display: none;
+  }
+
+}
+
+
+@media (max-width: 550px) {
+
+  .modern-add-member-form {
+    flex-direction: column;
+  }
+
+  .modern-add-member-form button {
+    padding: 13px;
+  }
+
+}

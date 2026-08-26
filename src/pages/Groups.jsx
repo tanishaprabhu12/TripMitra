@@ -1,12 +1,9 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-
 import Navbar from "../components/Navbar";
 import Sidebar from "../components/Sidebar";
 import Settlement from "../components/Settlement";
 
 function Groups() {
-  const navigate = useNavigate();
 
   // =========================================
   // CURRENT USER
@@ -16,255 +13,413 @@ function Groups() {
     localStorage.getItem("currentUser") || "null"
   );
 
+  const userId = currentUser?.id || "guest";
+
+  const currentUserName =
+    currentUser?.name ||
+    currentUser?.fullName ||
+    "Traveler";
+
+
   // =========================================
-  // CURRENT TRIP
+  // STORAGE KEYS
   // =========================================
 
-  const savedTrip = currentUser
-    ? localStorage.getItem(`trip_${currentUser.id}`)
-    : null;
+  const membersKey = currentUser
+    ? `tripMembers_${currentUser.id}`
+    : "tripMembers";
 
-  const trip = savedTrip
-    ? JSON.parse(savedTrip)
-    : null;
+  const expensesKey = currentUser
+    ? `tripExpenses_${currentUser.id}`
+    : "tripExpenses";
+
 
   // =========================================
   // MEMBERS
   // =========================================
 
   const [members, setMembers] = useState(() => {
-    if (!currentUser) {
-      return [];
-    }
 
-    const savedMembers = localStorage.getItem(
-      `tripMembers_${currentUser.id}`
-    );
+    const savedMembers =
+      localStorage.getItem(membersKey);
 
     return savedMembers
       ? JSON.parse(savedMembers)
-      : [currentUser.name];
+      : [currentUserName];
+
   });
+
+
+  const [newMember, setNewMember] =
+    useState("");
+
 
   // =========================================
   // EXPENSES
   // =========================================
 
-  const [expenses, setExpenses] = useState(() => {
-    if (!currentUser) {
-      return [];
-    }
+  const [expenses, setExpenses] =
+    useState(() => {
 
-    const savedExpenses = localStorage.getItem(
-      `tripExpenses_${currentUser.id}`
-    );
+      const savedExpenses =
+        localStorage.getItem(expensesKey);
 
-    return savedExpenses
-      ? JSON.parse(savedExpenses)
-      : [];
-  });
+      return savedExpenses
+        ? JSON.parse(savedExpenses)
+        : [];
+
+    });
+
 
   // =========================================
-  // UPDATE DATA
+  // SAVE MEMBERS
   // =========================================
 
   useEffect(() => {
-    if (!currentUser) {
-      return;
-    }
 
-    function updateData() {
-      const savedMembers = localStorage.getItem(
-        `tripMembers_${currentUser.id}`
-      );
+    localStorage.setItem(
+      membersKey,
+      JSON.stringify(members)
+    );
 
-      const savedExpenses = localStorage.getItem(
-        `tripExpenses_${currentUser.id}`
-      );
+  }, [members, membersKey]);
 
-      setMembers(
-        savedMembers
-          ? JSON.parse(savedMembers)
-          : [currentUser.name]
-      );
+
+  // =========================================
+  // LOAD EXPENSES
+  // =========================================
+
+  useEffect(() => {
+
+    function updateExpenses() {
+
+      const savedExpenses =
+        localStorage.getItem(
+          expensesKey
+        );
 
       setExpenses(
         savedExpenses
           ? JSON.parse(savedExpenses)
           : []
       );
+
     }
 
-    updateData();
+    updateExpenses();
 
-    window.addEventListener("storage", updateData);
+    window.addEventListener(
+      "storage",
+      updateExpenses
+    );
+
+    window.addEventListener(
+      "tripExpensesUpdated",
+      updateExpenses
+    );
 
     return () => {
-      window.removeEventListener("storage", updateData);
+
+      window.removeEventListener(
+        "storage",
+        updateExpenses
+      );
+
+      window.removeEventListener(
+        "tripExpensesUpdated",
+        updateExpenses
+      );
+
     };
-  }, [currentUser?.id]);
+
+  }, [expensesKey]);
+
 
   // =========================================
-  // NO LOGIN
+  // ADD MEMBER
   // =========================================
 
-  if (!currentUser) {
-    navigate("/login");
-    return null;
-  }
+  function addMember(event) {
 
-  // =========================================
-  // NO TRIP
-  // =========================================
+    event.preventDefault();
 
-  if (!trip) {
-    return (
-      <div>
-        <Navbar />
+    const memberName =
+      newMember.trim();
 
-        <div className="app-layout">
-          <Sidebar />
 
-          <main className="main-content">
+    // Empty name
 
-            <div className="empty-dashboard">
+    if (!memberName) {
 
-              <h1>
-                No trip yet ✈️
-              </h1>
+      alert(
+        "Please enter a member name."
+      );
 
-              <p>
-                Create a trip before managing
-                your group expenses.
-              </p>
+      return;
 
-              <button
-                onClick={() =>
-                  navigate("/create-trip")
-                }
-              >
-                Create My First Trip ✈️
-              </button>
+    }
 
-            </div>
 
-          </main>
-        </div>
-      </div>
+    // Duplicate name
+
+    const alreadyExists =
+      members.some(
+        (member) =>
+          member.toLowerCase() ===
+          memberName.toLowerCase()
+      );
+
+
+    if (alreadyExists) {
+
+      alert(
+        "This member is already in the trip."
+      );
+
+      return;
+
+    }
+
+
+    // Add member
+
+    const updatedMembers = [
+      ...members,
+      memberName,
+    ];
+
+
+    setMembers(
+      updatedMembers
     );
+
+
+    localStorage.setItem(
+      membersKey,
+      JSON.stringify(
+        updatedMembers
+      )
+    );
+
+
+    // Tell Expenses to update
+
+    window.dispatchEvent(
+      new Event(
+        "tripMembersUpdated"
+      )
+    );
+
+
+    setNewMember("");
+
   }
+
+
+  // =========================================
+  // REMOVE MEMBER
+  // =========================================
+
+  function removeMember(
+    memberToRemove
+  ) {
+
+    // Don't remove yourself
+
+    if (
+      memberToRemove ===
+      currentUserName
+    ) {
+
+      alert(
+        "You cannot remove yourself from the trip."
+      );
+
+      return;
+
+    }
+
+
+    const confirmed =
+      window.confirm(
+        `Remove ${memberToRemove} from the trip?`
+      );
+
+
+    if (!confirmed) {
+      return;
+    }
+
+
+    const updatedMembers =
+      members.filter(
+        (member) =>
+          member !==
+          memberToRemove
+      );
+
+
+    setMembers(
+      updatedMembers
+    );
+
+
+    localStorage.setItem(
+      membersKey,
+      JSON.stringify(
+        updatedMembers
+      )
+    );
+
+
+    // Tell Expenses to update
+
+    window.dispatchEvent(
+      new Event(
+        "tripMembersUpdated"
+      )
+    );
+
+  }
+
 
   // =========================================
   // TOTAL SPENDING
   // =========================================
 
-  const totalSpending = expenses.reduce(
-    (total, expense) =>
-      total + Number(expense.amount || 0),
-    0
-  );
+  const totalSpent =
+    expenses.reduce(
+      (total, expense) =>
+        total +
+        Number(
+          expense.amount || 0
+        ),
+      0
+    );
 
-  // =========================================
-  // MEMBER SUMMARY
-  // =========================================
-
-  const memberSummary = members.map((member) => {
-
-    let paid = 0;
-    let share = 0;
-
-    expenses.forEach((expense) => {
-
-      const amount =
-        Number(expense.amount || 0);
-
-      const paidBy =
-        expense.paidBy ||
-        currentUser.name;
-
-      const splitBetween =
-        expense.splitBetween ||
-        [paidBy];
-
-      // Amount this member paid
-      if (paidBy === member) {
-        paid += amount;
-      }
-
-      // Amount this member owes
-      if (splitBetween.includes(member)) {
-        share +=
-          amount /
-          splitBetween.length;
-      }
-    });
-
-    const balance = paid - share;
-
-    return {
-      member,
-      paid,
-      share,
-      balance,
-    };
-  });
-
-  // =========================================
-  // FORMAT MONEY
-  // =========================================
-
-  function formatMoney(amount) {
-    return `₹${amount.toLocaleString(
-      "en-IN",
-      {
-        maximumFractionDigits: 2,
-      }
-    )}`;
-  }
 
   // =========================================
   // PAGE
   // =========================================
 
   return (
+
     <div>
 
       <Navbar />
+
 
       <div className="app-layout">
 
         <Sidebar />
 
+
         <main className="main-content">
+
 
           {/* =================================
               HEADER
           ================================= */}
 
-          <div className="groups-header">
+          <div className="modern-page-header">
 
             <div>
 
+              <p className="page-eyebrow">
+                GROUP TRAVEL
+              </p>
+
               <h1>
-                👥 Group Spending
+                👥 Trip Group
               </h1>
 
               <p>
-                {trip.tripName} ·{" "}
-                {trip.destination}
+                Manage your travel companions
+                and keep shared expenses organized.
               </p>
 
             </div>
 
-            <div className="group-total">
+
+            <div className="groups-decoration">
+              👥✨
+            </div>
+
+          </div>
+
+
+          {/* =================================
+              GROUP OVERVIEW
+          ================================= */}
+
+          <div className="group-stat-grid">
+
+
+            <div className="group-stat-card purple">
+
+              <div className="group-stat-icon">
+                👥
+              </div>
 
               <span>
-                Total Trip Spending
+                Trip Members
               </span>
 
               <strong>
-                {formatMoney(totalSpending)}
+                {members.length}
               </strong>
+
+              <small>
+                people in your group
+              </small>
+
+            </div>
+
+
+            <div className="group-stat-card green">
+
+              <div className="group-stat-icon">
+                💸
+              </div>
+
+              <span>
+                Shared Spending
+              </span>
+
+              <strong>
+                ₹
+                {totalSpent.toLocaleString(
+                  "en-IN",
+                  {
+                    maximumFractionDigits: 2,
+                  }
+                )}
+              </strong>
+
+              <small>
+                total recorded expenses
+              </small>
+
+            </div>
+
+
+            <div className="group-stat-card blue">
+
+              <div className="group-stat-icon">
+                🧾
+              </div>
+
+              <span>
+                Shared Expenses
+              </span>
+
+              <strong>
+                {expenses.length}
+              </strong>
+
+              <small>
+                expenses recorded
+              </small>
 
             </div>
 
@@ -272,228 +427,166 @@ function Groups() {
 
 
           {/* =================================
-              MEMBERS
+              MEMBERS CARD
           ================================= */}
 
-          <div className="member-summary-grid">
-
-            {memberSummary.map((person) => (
-
-              <div
-                className="member-summary-card"
-                key={person.member}
-              >
-
-                <div className="member-summary-header">
-
-                  <div className="member-avatar">
-                    👤
-                  </div>
-
-                  <div>
-
-                    <h2>
-                      {person.member}
-                    </h2>
-
-                    <span>
-                      Trip member
-                    </span>
-
-                  </div>
-
-                </div>
+          <div className="modern-card group-members-card">
 
 
-                <div className="member-stat">
+            <div className="card-title-row">
 
-                  <span>
-                    💳 Paid
-                  </span>
+              <div>
 
-                  <strong>
-                    {formatMoney(
-                      person.paid
-                    )}
-                  </strong>
+                <span className="card-kicker">
+                  👥 TRAVEL COMPANIONS
+                </span>
 
-                </div>
+                <h2>
+                  Trip Members
+                </h2>
 
-
-                <div className="member-stat">
-
-                  <span>
-                    📊 Fair Share
-                  </span>
-
-                  <strong>
-                    {formatMoney(
-                      person.share
-                    )}
-                  </strong>
-
-                </div>
-
-
-                <div
-                  className={`member-balance ${
-                    person.balance >= 0
-                      ? "positive"
-                      : "negative"
-                  }`}
-                >
-
-                  <span>
-                    {person.balance >= 0
-                      ? "💰 Gets back"
-                      : "💸 Owes"}
-                  </span>
-
-                  <strong>
-                    {formatMoney(
-                      Math.abs(
-                        person.balance
-                      )
-                    )}
-                  </strong>
-
-                </div>
+                <p>
+                  Add everyone traveling with
+                  you on this trip.
+                </p>
 
               </div>
 
-            ))}
+
+              <div className="members-count">
+
+                {members.length}
+
+                <span>
+                  {members.length === 1
+                    ? " member"
+                    : " members"}
+                </span>
+
+              </div>
+
+            </div>
+
+
+            {/* =================================
+                MEMBER LIST
+            ================================= */}
+
+            <div className="modern-group-member-list">
+
+              {members.map(
+                (member) => (
+
+                  <div
+                    className="modern-group-member"
+                    key={member}
+                  >
+
+
+                    <div className="group-member-avatar">
+                      👤
+                    </div>
+
+
+                    <div className="group-member-info">
+
+                      <strong>
+                        {member}
+                      </strong>
+
+                      {member ===
+                        currentUserName && (
+
+                        <span>
+                          You
+                        </span>
+
+                      )}
+
+                    </div>
+
+
+                    {member !==
+                      currentUserName && (
+
+                      <button
+                        type="button"
+                        className="modern-remove-member"
+                        onClick={() =>
+                          removeMember(
+                            member
+                          )
+                        }
+                        title={`Remove ${member}`}
+                      >
+                        ×
+                      </button>
+
+                    )}
+
+                  </div>
+
+                )
+              )}
+
+            </div>
+
+
+            {/* =================================
+                ADD MEMBER
+            ================================= */}
+
+            <form
+              className="modern-add-member-form"
+              onSubmit={addMember}
+            >
+
+              <input
+                type="text"
+                placeholder="Enter friend's name"
+                value={newMember}
+                onChange={(event) =>
+                  setNewMember(
+                    event.target.value
+                  )
+                }
+              />
+
+
+              <button type="submit">
+                + Add Member
+              </button>
+
+            </form>
+
 
           </div>
 
 
           {/* =================================
-              EXPENSE HISTORY
+              INFO
           ================================= */}
 
-          <div className="group-expenses">
+          <div className="group-info-banner">
 
-            <h2>
-              🧾 Group Expense History
-            </h2>
+            <div className="group-info-icon">
+              💡
+            </div>
 
-            {expenses.length === 0 ? (
+            <div>
 
-              <div className="group-empty">
+              <strong>
+                How group expenses work
+              </strong>
 
-                <div>
-                  💰
-                </div>
+              <p>
+                Add your travel companions here,
+                then go to Expenses to choose who
+                paid and who should split each
+                expense.
+              </p>
 
-                <h3>
-                  No group expenses yet
-                </h3>
-
-                <p>
-                  Add an expense from the
-                  dashboard to see it here.
-                </p>
-
-              </div>
-
-            ) : (
-
-              <div className="group-expense-list">
-
-                {expenses
-                  .slice()
-                  .reverse()
-                  .map((expense, index) => {
-
-                    const splitBetween =
-                      expense.splitBetween ||
-                      [
-                        expense.paidBy ||
-                        currentUser.name,
-                      ];
-
-                    const share =
-                      Number(
-                        expense.amount || 0
-                      ) /
-                      splitBetween.length;
-
-                    return (
-
-                      <div
-                        className="group-expense-item"
-                        key={
-                          expense.id ||
-                          `${expense.description}-${index}`
-                        }
-                      >
-
-                        <div className="expense-category-icon">
-
-                          {expense.category === "Food"
-                            ? "🍴"
-                            : expense.category ===
-                              "Accommodation"
-                            ? "🏨"
-                            : expense.category ===
-                              "Transport"
-                            ? "🚕"
-                            : expense.category ===
-                              "Activities"
-                            ? "🎟️"
-                            : expense.category ===
-                              "Shopping"
-                            ? "🛍️"
-                            : "💳"}
-
-                        </div>
-
-
-                        <div className="group-expense-info">
-
-                          <strong>
-                            {expense.description}
-                          </strong>
-
-                          <span>
-                            {expense.category}
-                          </span>
-
-                          <small>
-                            Paid by{" "}
-                            {expense.paidBy ||
-                              currentUser.name}
-                            {" · "}
-                            {splitBetween.length}{" "}
-                            people
-                          </small>
-
-                        </div>
-
-
-                        <div className="group-expense-amount">
-
-                          <strong>
-                            {formatMoney(
-                              Number(
-                                expense.amount || 0
-                              )
-                            )}
-                          </strong>
-
-                          <small>
-                            {formatMoney(share)} each
-                          </small>
-
-                        </div>
-
-                      </div>
-
-                    );
-                  })}
-
-              </div>
-
-            )}
+            </div>
 
           </div>
 
@@ -512,7 +605,9 @@ function Groups() {
       </div>
 
     </div>
+
   );
+
 }
 
 export default Groups;
