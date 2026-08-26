@@ -16,17 +16,36 @@ function Budget() {
 
 
   // =========================================
+  // TRIP
+  // =========================================
+
+  const tripKey = `trip_${userId}`;
+
+  const getTrip = () => {
+    const savedTrip =
+      localStorage.getItem(tripKey);
+
+    return savedTrip
+      ? JSON.parse(savedTrip)
+      : null;
+  };
+
+
+  const [trip, setTrip] = useState(
+    getTrip
+  );
+
+
+  // =========================================
   // BUDGET
   // =========================================
 
   const [budget, setBudget] = useState(() => {
 
-    return (
-      Number(
-        localStorage.getItem(
-          `tripBudget_${userId}`
-        )
-      ) || 0
+    const savedTrip = getTrip();
+
+    return Number(
+      savedTrip?.budget || 0
     );
 
   });
@@ -69,17 +88,32 @@ function Budget() {
 
 
   // =========================================
-  // SAVE BUDGET
+  // SAVE BUDGET TO TRIP
   // =========================================
 
   useEffect(() => {
 
+    const savedTrip =
+      localStorage.getItem(tripKey);
+
+    if (!savedTrip) {
+      return;
+    }
+
+    const updatedTrip =
+      JSON.parse(savedTrip);
+
+    updatedTrip.budget =
+      Number(budget) || 0;
+
     localStorage.setItem(
-      `tripBudget_${userId}`,
-      budget
+      tripKey,
+      JSON.stringify(updatedTrip)
     );
 
-  }, [budget, userId]);
+    setTrip(updatedTrip);
+
+  }, [budget, tripKey]);
 
 
   // =========================================
@@ -90,6 +124,9 @@ function Budget() {
 
     function updateData() {
 
+      const savedTrip =
+        localStorage.getItem(tripKey);
+
       const savedExpenses =
         localStorage.getItem(
           `tripExpenses_${userId}`
@@ -99,6 +136,27 @@ function Budget() {
         localStorage.getItem(
           `tripItinerary_${userId}`
         );
+
+
+      if (savedTrip) {
+
+        const updatedTrip =
+          JSON.parse(savedTrip);
+
+        setTrip(updatedTrip);
+
+        setBudget(
+          Number(
+            updatedTrip.budget || 0
+          )
+        );
+
+      } else {
+
+        setTrip(null);
+        setBudget(0);
+
+      }
 
 
       setExpenses(
@@ -115,6 +173,9 @@ function Budget() {
       );
 
     }
+
+
+    updateData();
 
 
     window.addEventListener(
@@ -143,7 +204,7 @@ function Budget() {
 
     };
 
-  }, [userId]);
+  }, [userId, tripKey]);
 
 
   // =========================================
@@ -241,23 +302,18 @@ function Budget() {
         "Other";
 
       if (
-        !categoryTotals[
-          category
-        ]
+        !categoryTotals[category]
       ) {
 
-        categoryTotals[
-          category
-        ] = 0;
+        categoryTotals[category] = 0;
 
       }
 
 
-      categoryTotals[
-        category
-      ] += Number(
-        expense.amount || 0
-      );
+      categoryTotals[category] +=
+        Number(
+          expense.amount || 0
+        );
 
     }
   );
@@ -293,6 +349,57 @@ function Budget() {
 
 
   // =========================================
+  // NO TRIP
+  // =========================================
+
+  if (!trip) {
+
+    return (
+
+      <div>
+
+        <Navbar />
+
+        <div className="app-layout">
+
+          <Sidebar />
+
+          <main className="main-content">
+
+            <div className="empty-dashboard">
+
+              <h1>
+                No trip yet ✈️
+              </h1>
+
+              <p>
+                Create a trip before
+                setting a budget.
+              </p>
+
+              <button
+                onClick={() =>
+                  window.location.href =
+                    "/create-trip"
+                }
+              >
+                Create My First Trip ✈️
+              </button>
+
+            </div>
+
+          </main>
+
+        </div>
+
+      </div>
+
+    );
+
+  }
+
+
+  // =========================================
   // PAGE
   // =========================================
 
@@ -302,11 +409,9 @@ function Budget() {
 
       <Navbar />
 
-
       <div className="app-layout">
 
         <Sidebar />
-
 
         <main className="main-content">
 
@@ -324,8 +429,8 @@ function Budget() {
               </h1>
 
               <p>
-                Track your actual spending
-                and planned itinerary costs.
+                {trip.tripName} ·{" "}
+                {trip.destination}
               </p>
 
             </div>
@@ -378,9 +483,6 @@ function Budget() {
 
           <div className="budget-overview-grid">
 
-
-            {/* BUDGET */}
-
             <div className="budget-stat-card">
 
               <span>
@@ -395,8 +497,6 @@ function Budget() {
 
             </div>
 
-
-            {/* SPENT */}
 
             <div className="budget-stat-card">
 
@@ -416,8 +516,6 @@ function Budget() {
 
             </div>
 
-
-            {/* REMAINING */}
 
             <div className="budget-stat-card">
 
@@ -448,7 +546,6 @@ function Budget() {
 
 
             <div className="budget-breakdown-grid">
-
 
               <div>
 
@@ -515,7 +612,7 @@ function Budget() {
 
                 <span>
                   {percentage.toFixed(0)}%
-                  of your budget used
+                  {" "}of your budget used
                 </span>
 
               </div>
@@ -548,8 +645,6 @@ function Budget() {
 
             </div>
 
-
-            {/* STATUS */}
 
             {budget === 0 ? (
 
