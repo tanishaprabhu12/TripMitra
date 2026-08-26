@@ -8,15 +8,22 @@ function Navbar() {
   );
 
   function handleLogout() {
+    // Remove only the current login session
     localStorage.removeItem("currentUser");
 
+    // Send user back to login
     navigate("/login");
   }
 
   return (
     <nav className="navbar">
 
-      <h2>TripMitra ✈️</h2>
+      <h2
+        onClick={() => navigate("/dashboard")}
+        style={{ cursor: "pointer" }}
+      >
+        TripMitra ✈️
+      </h2>
 
       <div className="navbar-user">
 

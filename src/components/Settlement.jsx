@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 
 function Settlement({ expenses }) {
+
   // =========================================
   // CURRENT USER
   // =========================================
@@ -36,6 +37,7 @@ function Settlement({ expenses }) {
   // =========================================
 
   const balances = useMemo(() => {
+
     const result = {};
 
     // Start everyone at ₹0
@@ -44,8 +46,9 @@ function Settlement({ expenses }) {
     });
 
 
-    // Process each expense
+    // Process every expense
     expenses.forEach((expense) => {
+
       const amount =
         Number(expense.amount || 0);
 
@@ -70,16 +73,17 @@ function Settlement({ expenses }) {
       }
 
 
-      // Credit the person who paid
+      // Person who paid gets credit
       result[paidBy] += amount;
 
 
-      // Divide expense among participants
+      // Calculate each person's share
       const share =
         amount /
         splitBetween.length;
 
 
+      // Subtract each person's share
       splitBetween.forEach((member) => {
 
         if (
@@ -91,10 +95,12 @@ function Settlement({ expenses }) {
         result[member] -= share;
 
       });
+
     });
 
 
     return result;
+
   }, [
     expenses,
     members,
@@ -106,139 +112,133 @@ function Settlement({ expenses }) {
   // CREATE CREDITORS + DEBTORS
   // =========================================
 
-  const { creditors, debtors } =
-    useMemo(() => {
+  const {
+    creditors,
+    debtors,
+  } = useMemo(() => {
 
-      const creditorsList = [];
-      const debtorsList = [];
-
-
-      Object.entries(balances).forEach(
-        ([person, balance]) => {
-
-          const rounded =
-            Math.round(
-              balance * 100
-            ) / 100;
+    const creditorsList = [];
+    const debtorsList = [];
 
 
-          if (rounded > 0.01) {
+    Object.entries(balances).forEach(
+      ([person, balance]) => {
 
-            creditorsList.push({
-              person,
-              amount: rounded,
-            });
+        const rounded =
+          Math.round(
+            balance * 100
+          ) / 100;
 
-          } else if (rounded < -0.01) {
 
-            debtorsList.push({
-              person,
-              amount: Math.abs(
-                rounded
-              ),
-            });
+        // Person should receive money
+        if (rounded > 0.01) {
 
-          }
+          creditorsList.push({
+            person,
+            amount: rounded,
+          });
 
         }
-      );
+
+        // Person owes money
+        else if (rounded < -0.01) {
+
+          debtorsList.push({
+            person,
+            amount:
+              Math.abs(rounded),
+          });
+
+        }
+
+      }
+    );
 
 
-      return {
-        creditors: creditorsList,
-        debtors: debtorsList,
-      };
+    return {
+      creditors: creditorsList,
+      debtors: debtorsList,
+    };
 
-    }, [balances]);
+  }, [balances]);
 
 
   // =========================================
   // GENERATE SETTLEMENTS
   // =========================================
 
-  const settlements =
-    useMemo(() => {
+  const settlements = useMemo(() => {
 
-      const creditorsCopy =
-        creditors.map(
-          (item) => ({
-            ...item,
-          })
-        );
+    const creditorsCopy =
+      creditors.map((item) => ({
+        ...item,
+      }));
 
-      const debtorsCopy =
-        debtors.map(
-          (item) => ({
-            ...item,
-          })
-        );
+    const debtorsCopy =
+      debtors.map((item) => ({
+        ...item,
+      }));
 
 
-      const result = [];
+    const result = [];
 
-      let creditorIndex = 0;
-      let debtorIndex = 0;
+    let creditorIndex = 0;
+    let debtorIndex = 0;
 
 
-      while (
-        creditorIndex <
-          creditorsCopy.length &&
-        debtorIndex <
-          debtorsCopy.length
+    while (
+      creditorIndex <
+        creditorsCopy.length &&
+      debtorIndex <
+        debtorsCopy.length
+    ) {
+
+      const creditor =
+        creditorsCopy[creditorIndex];
+
+      const debtor =
+        debtorsCopy[debtorIndex];
+
+
+      const amount = Math.min(
+        creditor.amount,
+        debtor.amount
+      );
+
+
+      result.push({
+        from: debtor.person,
+        to: creditor.person,
+        amount:
+          Math.round(
+            amount * 100
+          ) / 100,
+      });
+
+
+      creditor.amount -= amount;
+      debtor.amount -= amount;
+
+
+      if (
+        creditor.amount < 0.01
       ) {
-
-        const creditor =
-          creditorsCopy[
-            creditorIndex
-          ];
-
-        const debtor =
-          debtorsCopy[
-            debtorIndex
-          ];
-
-
-        const amount = Math.min(
-          creditor.amount,
-          debtor.amount
-        );
-
-
-        result.push({
-          from: debtor.person,
-          to: creditor.person,
-          amount:
-            Math.round(
-              amount * 100
-            ) / 100,
-        });
-
-
-        creditor.amount -= amount;
-        debtor.amount -= amount;
-
-
-        if (
-          creditor.amount <
-          0.01
-        ) {
-          creditorIndex++;
-        }
-
-
-        if (
-          debtor.amount <
-          0.01
-        ) {
-          debtorIndex++;
-        }
-
+        creditorIndex++;
       }
 
 
-      return result;
+      if (
+        debtor.amount < 0.01
+      ) {
+        debtorIndex++;
+      }
 
-    }, [creditors, debtors]);
+    }
+
+
+    return result;
+
+  }, [creditors, debtors]);
 
 
   // =========================================
@@ -261,6 +261,7 @@ function Settlement({ expenses }) {
   // =========================================
 
   function formatMoney(amount) {
+
     return `₹${Number(
       amount
     ).toLocaleString(
@@ -270,6 +271,7 @@ function Settlement({ expenses }) {
           amount % 1 !== 0
             ? 2
             : 0,
+
         maximumFractionDigits: 2,
       }
     )}`;
@@ -283,9 +285,7 @@ function Settlement({ expenses }) {
   return (
     <div className="settlement-card">
 
-      {/* =====================================
-          HEADER
-      ====================================== */}
+      {/* HEADER */}
 
       <div className="settlement-header">
 
@@ -304,17 +304,13 @@ function Settlement({ expenses }) {
 
 
         <strong>
-          {formatMoney(
-            totalSpent
-          )}
+          {formatMoney(totalSpent)}
         </strong>
 
       </div>
 
 
-      {/* =====================================
-          NO EXPENSES
-      ====================================== */}
+      {/* NO EXPENSES */}
 
       {expenses.length === 0 ? (
 
@@ -337,9 +333,7 @@ function Settlement({ expenses }) {
 
       ) : settlements.length === 0 ? (
 
-        /* ===================================
-           BALANCED
-        ==================================== */
+        /* EVERYONE BALANCED */
 
         <div className="settlement-balanced">
 
@@ -360,9 +354,7 @@ function Settlement({ expenses }) {
 
       ) : (
 
-        /* ===================================
-           SETTLEMENT LIST
-        ==================================== */
+        /* SETTLEMENT LIST */
 
         <div>
 

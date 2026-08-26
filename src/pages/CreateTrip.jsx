@@ -6,15 +6,24 @@ function CreateTrip() {
 
   const [searchParams] = useSearchParams();
 
-  // Get destination from Explore page
+  // =========================================
+  // DESTINATION FROM EXPLORE
+  // =========================================
+
   const suggestedDestination =
     searchParams.get("destination") || "";
 
-  const [tripName, setTripName] = useState(
-    suggestedDestination
-      ? `${suggestedDestination} Trip`
-      : ""
-  );
+
+  // =========================================
+  // FORM STATE
+  // =========================================
+
+  const [tripName, setTripName] =
+    useState(
+      suggestedDestination
+        ? `${suggestedDestination} Trip`
+        : ""
+    );
 
   const [destination, setDestination] =
     useState(suggestedDestination);
@@ -39,13 +48,20 @@ function CreateTrip() {
   function handleSubmit(event) {
     event.preventDefault();
 
+
+    // =========================================
+    // GET CURRENT USER
+    // =========================================
+
     const currentUser = JSON.parse(
       localStorage.getItem(
         "currentUser"
       ) || "null"
     );
 
+
     if (!currentUser) {
+
       alert(
         "Please login before creating a trip."
       );
@@ -56,43 +72,101 @@ function CreateTrip() {
     }
 
 
+    // =========================================
+    // CREATE TRIP OBJECT
+    // =========================================
+
     const trip = {
-      tripName,
-      destination,
+      tripName:
+        tripName.trim(),
+
+      destination:
+        destination.trim(),
+
       startDate,
+
       endDate,
-      travelers: Number(travelers),
-      budget: Number(budget),
+
+      travelers:
+        Number(travelers),
+
+      budget:
+        Number(budget),
     };
 
-    // Reset members when creating a new trip
-localStorage.removeItem(
-  `tripMembers_${currentUser.id}`
-);
+
+    // =========================================
+    // USER-SPECIFIC STORAGE KEYS
+    // =========================================
+
+    const tripKey =
+      `trip_${currentUser.id}`;
+
+    const membersKey =
+      `tripMembers_${currentUser.id}`;
+
+    const expensesKey =
+      `tripExpenses_${currentUser.id}`;
+
+    const itineraryKey =
+      `tripItinerary_${currentUser.id}`;
 
 
-    // Save trip for this specific user
+    // =========================================
+    // SAVE TRIP
+    // =========================================
+
     localStorage.setItem(
-      `trip_${currentUser.id}`,
+      tripKey,
       JSON.stringify(trip)
     );
 
 
-    // Start with a fresh itinerary
-    localStorage.removeItem(
-      `tripItinerary_${currentUser.id}`
+    // =========================================
+    // RESET MEMBERS
+    // =========================================
+    // The person creating the trip becomes
+    // the first member automatically.
+
+    localStorage.setItem(
+      membersKey,
+      JSON.stringify([
+        currentUser.name,
+      ])
     );
 
 
-    // Start with fresh expenses
-    localStorage.removeItem(
-      `tripExpenses_${currentUser.id}`
+    // =========================================
+    // RESET EXPENSES
+    // =========================================
+
+    localStorage.setItem(
+      expensesKey,
+      JSON.stringify([])
     );
 
+
+    // =========================================
+    // RESET ITINERARY
+    // =========================================
+
+    localStorage.setItem(
+      itineraryKey,
+      JSON.stringify([])
+    );
+
+
+    // =========================================
+    // GO TO DASHBOARD
+    // =========================================
 
     navigate("/dashboard");
   }
 
+
+  // =========================================
+  // PAGE
+  // =========================================
 
   return (
     <div className="auth-page">
@@ -108,9 +182,11 @@ localStorage.removeItem(
         </p>
 
 
-        <form onSubmit={handleSubmit}>
+        <form
+          onSubmit={handleSubmit}
+        >
 
-          {/* Trip Name */}
+          {/* TRIP NAME */}
 
           <input
             type="text"
@@ -125,7 +201,7 @@ localStorage.removeItem(
           />
 
 
-          {/* Destination */}
+          {/* DESTINATION */}
 
           <input
             type="text"
@@ -140,7 +216,7 @@ localStorage.removeItem(
           />
 
 
-          {/* Start Date */}
+          {/* START DATE */}
 
           <label>
             Start Date
@@ -158,7 +234,7 @@ localStorage.removeItem(
           />
 
 
-          {/* End Date */}
+          {/* END DATE */}
 
           <label>
             End Date
@@ -176,7 +252,7 @@ localStorage.removeItem(
           />
 
 
-          {/* Travelers */}
+          {/* TRAVELERS */}
 
           <input
             type="number"
@@ -192,7 +268,7 @@ localStorage.removeItem(
           />
 
 
-          {/* Budget */}
+          {/* BUDGET */}
 
           <input
             type="number"
@@ -208,7 +284,11 @@ localStorage.removeItem(
           />
 
 
-          <button type="submit">
+          {/* CREATE */}
+
+          <button
+            type="submit"
+          >
             Create Trip ✈️
           </button>
 

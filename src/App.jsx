@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+
 import "./App.css";
 
 import Login from "./pages/Login";
@@ -12,12 +18,45 @@ import Savings from "./pages/Savings";
 import Budget from "./pages/Budget";
 import ItineraryBoard from "./pages/ItineraryBoard";
 
+
+// =========================================
+// PROTECTED ROUTE
+// =========================================
+
+function ProtectedRoute({ children }) {
+
+  const currentUser = JSON.parse(
+    localStorage.getItem("currentUser") || "null"
+  );
+
+  if (!currentUser) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+  return children;
+}
+
+
+// =========================================
+// APP
+// =========================================
+
 function App() {
+
   return (
     <BrowserRouter>
+
       <Routes>
 
-        {/* Authentication */}
+        {/* =====================================
+            AUTHENTICATION
+        ====================================== */}
+
         <Route
           path="/login"
           element={<Login />}
@@ -29,49 +68,94 @@ function App() {
         />
 
 
-        {/* Main pages */}
+        {/* =====================================
+            PROTECTED PAGES
+        ====================================== */}
+
         <Route
           path="/dashboard"
-          element={<Dashboard />}
+          element={
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          }
         />
+
 
         <Route
           path="/create-trip"
-          element={<CreateTrip />}
+          element={
+            <ProtectedRoute>
+              <CreateTrip />
+            </ProtectedRoute>
+          }
         />
+
 
         <Route
           path="/expenses"
-          element={<Expenses />}
+          element={
+            <ProtectedRoute>
+              <Expenses />
+            </ProtectedRoute>
+          }
         />
+
 
         <Route
           path="/groups"
-          element={<Groups />}
+          element={
+            <ProtectedRoute>
+              <Groups />
+            </ProtectedRoute>
+          }
         />
+
 
         <Route
           path="/savings"
-          element={<Savings />}
+          element={
+            <ProtectedRoute>
+              <Savings />
+            </ProtectedRoute>
+          }
         />
+
 
         <Route
           path="/budget"
-          element={<Budget />}
+          element={
+            <ProtectedRoute>
+              <Budget />
+            </ProtectedRoute>
+          }
         />
+
 
         <Route
           path="/explore"
-          element={<Explore />}
+          element={
+            <ProtectedRoute>
+              <Explore />
+            </ProtectedRoute>
+          }
         />
 
+
         <Route
-  path="/itinerary"
-  element={<ItineraryBoard />}
-/>
+          path="/itinerary"
+          element={
+            <ProtectedRoute>
+              <ItineraryBoard />
+            </ProtectedRoute>
+          }
+        />
 
 
-        {/* Anything unknown goes to Login */}
+        {/* =====================================
+            UNKNOWN URL
+        ====================================== */}
+
         <Route
           path="*"
           element={
@@ -83,6 +167,7 @@ function App() {
         />
 
       </Routes>
+
     </BrowserRouter>
   );
 }
