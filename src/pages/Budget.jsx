@@ -19,20 +19,10 @@ function Budget() {
   // TRIP
   // =========================================
 
-  const tripKey = `trip_${userId}`;
-
-  const getTrip = () => {
-    const savedTrip =
-      localStorage.getItem(tripKey);
-
-    return savedTrip
-      ? JSON.parse(savedTrip)
-      : null;
-  };
-
-
-  const [trip, setTrip] = useState(
-    getTrip
+  const trip = JSON.parse(
+    localStorage.getItem(
+      `trip_${userId}`
+    ) || "null"
   );
 
 
@@ -42,10 +32,14 @@ function Budget() {
 
   const [budget, setBudget] = useState(() => {
 
-    const savedTrip = getTrip();
-
-    return Number(
-      savedTrip?.budget || 0
+    return (
+      Number(
+        localStorage.getItem(
+          `tripBudget_${userId}`
+        )
+      ) ||
+      Number(trip?.budget || 0) ||
+      0
     );
 
   });
@@ -57,13 +51,13 @@ function Budget() {
 
   const [expenses, setExpenses] = useState(() => {
 
-    const savedExpenses =
+    const saved =
       localStorage.getItem(
         `tripExpenses_${userId}`
       );
 
-    return savedExpenses
-      ? JSON.parse(savedExpenses)
+    return saved
+      ? JSON.parse(saved)
       : [];
 
   });
@@ -73,47 +67,33 @@ function Budget() {
   // ITINERARY
   // =========================================
 
-  const [itinerary, setItinerary] = useState(() => {
+  const [itinerary, setItinerary] =
+    useState(() => {
 
-    const savedItinerary =
-      localStorage.getItem(
-        `tripItinerary_${userId}`
-      );
+      const saved =
+        localStorage.getItem(
+          `tripItinerary_${userId}`
+        );
 
-    return savedItinerary
-      ? JSON.parse(savedItinerary)
-      : [];
+      return saved
+        ? JSON.parse(saved)
+        : [];
 
-  });
+    });
 
 
   // =========================================
-  // SAVE BUDGET TO TRIP
+  // SAVE BUDGET
   // =========================================
 
   useEffect(() => {
 
-    const savedTrip =
-      localStorage.getItem(tripKey);
-
-    if (!savedTrip) {
-      return;
-    }
-
-    const updatedTrip =
-      JSON.parse(savedTrip);
-
-    updatedTrip.budget =
-      Number(budget) || 0;
-
     localStorage.setItem(
-      tripKey,
-      JSON.stringify(updatedTrip)
+      `tripBudget_${userId}`,
+      budget
     );
 
-    setTrip(updatedTrip);
-
-  }, [budget, tripKey]);
+  }, [budget, userId]);
 
 
   // =========================================
@@ -123,9 +103,6 @@ function Budget() {
   useEffect(() => {
 
     function updateData() {
-
-      const savedTrip =
-        localStorage.getItem(tripKey);
 
       const savedExpenses =
         localStorage.getItem(
@@ -137,34 +114,11 @@ function Budget() {
           `tripItinerary_${userId}`
         );
 
-
-      if (savedTrip) {
-
-        const updatedTrip =
-          JSON.parse(savedTrip);
-
-        setTrip(updatedTrip);
-
-        setBudget(
-          Number(
-            updatedTrip.budget || 0
-          )
-        );
-
-      } else {
-
-        setTrip(null);
-        setBudget(0);
-
-      }
-
-
       setExpenses(
         savedExpenses
           ? JSON.parse(savedExpenses)
           : []
       );
-
 
       setItinerary(
         savedItinerary
@@ -174,21 +128,12 @@ function Budget() {
 
     }
 
-
     updateData();
-
 
     window.addEventListener(
       "storage",
       updateData
     );
-
-
-    window.addEventListener(
-      "tripMembersUpdated",
-      updateData
-    );
-
 
     return () => {
 
@@ -197,18 +142,13 @@ function Budget() {
         updateData
       );
 
-      window.removeEventListener(
-        "tripMembersUpdated",
-        updateData
-      );
-
     };
 
-  }, [userId, tripKey]);
+  }, [userId]);
 
 
   // =========================================
-  // EXPENSE SPENDING
+  // CALCULATIONS
   // =========================================
 
   const expenseSpending =
@@ -222,10 +162,6 @@ function Budget() {
     );
 
 
-  // =========================================
-  // ITINERARY COST
-  // =========================================
-
   const itineraryCost =
     itinerary.reduce(
       (total, item) =>
@@ -237,42 +173,26 @@ function Budget() {
     );
 
 
-  // =========================================
-  // TOTAL SPENDING
-  // =========================================
-
   const totalSpending =
     expenseSpending +
     itineraryCost;
 
 
-  // =========================================
-  // REMAINING
-  // =========================================
-
   const remainingBudget =
     Math.max(
       budget -
-      totalSpending,
+        totalSpending,
       0
     );
 
-
-  // =========================================
-  // OVER BUDGET
-  // =========================================
 
   const overBudget =
     Math.max(
       totalSpending -
-      budget,
+        budget,
       0
     );
 
-
-  // =========================================
-  // PERCENTAGE
-  // =========================================
 
   const percentage =
     budget > 0
@@ -291,9 +211,6 @@ function Budget() {
 
   const categoryTotals = {};
 
-
-  // Expenses
-
   expenses.forEach(
     (expense) => {
 
@@ -301,14 +218,9 @@ function Budget() {
         expense.category ||
         "Other";
 
-      if (
-        !categoryTotals[category]
-      ) {
-
+      if (!categoryTotals[category]) {
         categoryTotals[category] = 0;
-
       }
-
 
       categoryTotals[category] +=
         Number(
@@ -317,17 +229,6 @@ function Budget() {
 
     }
   );
-
-
-  // Itinerary
-
-  if (itineraryCost > 0) {
-
-    categoryTotals[
-      "Planned Activities"
-    ] = itineraryCost;
-
-  }
 
 
   // =========================================
@@ -349,57 +250,6 @@ function Budget() {
 
 
   // =========================================
-  // NO TRIP
-  // =========================================
-
-  if (!trip) {
-
-    return (
-
-      <div>
-
-        <Navbar />
-
-        <div className="app-layout">
-
-          <Sidebar />
-
-          <main className="main-content">
-
-            <div className="empty-dashboard">
-
-              <h1>
-                No trip yet ✈️
-              </h1>
-
-              <p>
-                Create a trip before
-                setting a budget.
-              </p>
-
-              <button
-                onClick={() =>
-                  window.location.href =
-                    "/create-trip"
-                }
-              >
-                Create My First Trip ✈️
-              </button>
-
-            </div>
-
-          </main>
-
-        </div>
-
-      </div>
-
-    );
-
-  }
-
-
-  // =========================================
   // PAGE
   // =========================================
 
@@ -413,25 +263,161 @@ function Budget() {
 
         <Sidebar />
 
-        <main className="main-content">
+        <main className="main-content budget-page">
 
 
           {/* =================================
               HEADER
           ================================= */}
 
-          <div className="page-header">
+          <div className="modern-page-header">
 
             <div>
+
+              <p className="page-eyebrow">
+                TRIP FINANCES
+              </p>
 
               <h1>
                 📊 Trip Budget
               </h1>
 
               <p>
-                {trip.tripName} ·{" "}
-                {trip.destination}
+                {trip?.tripName ||
+                  "Your Trip"}
+                {trip?.destination
+                  ? ` · ${trip.destination}`
+                  : ""}
               </p>
+
+            </div>
+
+            <div className="budget-decoration">
+              💵👛
+            </div>
+
+          </div>
+
+
+          {/* =================================
+              STAT CARDS
+          ================================= */}
+
+          <div className="budget-stat-grid">
+
+
+            {/* BUDGET */}
+
+            <div className="budget-modern-stat purple">
+
+              <div className="stat-icon">
+                🎯
+              </div>
+
+              <span>
+                Total Budget
+              </span>
+
+              <strong>
+                {formatMoney(budget)}
+              </strong>
+
+              <button
+                type="button"
+                onClick={() => {
+                  document
+                    .querySelector(
+                      ".budget-main-input"
+                    )
+                    ?.focus();
+                }}
+              >
+                Edit Budget
+              </button>
+
+            </div>
+
+
+            {/* SPENDING */}
+
+            <div className="budget-modern-stat blue">
+
+              <div className="stat-icon">
+                💸
+              </div>
+
+              <span>
+                Total Spending
+              </span>
+
+              <strong>
+                {formatMoney(
+                  totalSpending
+                )}
+              </strong>
+
+              <small>
+                {percentage.toFixed(0)}%
+                of budget used
+              </small>
+
+            </div>
+
+
+            {/* REMAINING */}
+
+            <div className="budget-modern-stat green">
+
+              <div className="stat-icon">
+                💰
+              </div>
+
+              <span>
+                Remaining
+              </span>
+
+              <strong>
+                {formatMoney(
+                  remainingBudget
+                )}
+              </strong>
+
+              <small>
+                {budget > 0
+                  ? `${Math.max(
+                      100 -
+                        percentage,
+                      0
+                    ).toFixed(0)}% of budget left`
+                  : "Set a budget"}
+              </small>
+
+            </div>
+
+
+            {/* OVER BUDGET */}
+
+            <div className="budget-modern-stat red">
+
+              <div className="stat-icon">
+                ⚠️
+              </div>
+
+              <span>
+                Over Budget
+              </span>
+
+              <strong>
+                {formatMoney(
+                  overBudget
+                )}
+              </strong>
+
+              <small>
+                {overBudget > 0
+                  ? "Budget exceeded"
+                  : "You're within budget"}
+              </small>
 
             </div>
 
@@ -442,24 +428,36 @@ function Budget() {
               SET BUDGET
           ================================= */}
 
-          <div className="page-card">
+          <div className="modern-card budget-setting-card">
 
-            <h2>
-              💰 Set Trip Budget
-            </h2>
+            <div>
 
-            <p>
-              Enter the maximum amount you
-              want to spend on this trip.
-            </p>
+              <span className="card-kicker">
+                💰 BUDGET SETTINGS
+              </span>
 
+              <h2>
+                Set Trip Budget
+              </h2>
 
-            <div className="budget-input-row">
+              <p>
+                Enter the maximum amount you
+                want to spend on this trip.
+              </p>
+
+            </div>
+
+            <div className="budget-input-modern">
+
+              <span>
+                ₹
+              </span>
 
               <input
+                className="budget-main-input"
                 type="number"
                 min="0"
-                placeholder="Trip budget ₹"
+                placeholder="Trip budget"
                 value={
                   budget || ""
                 }
@@ -478,80 +476,126 @@ function Budget() {
 
 
           {/* =================================
-              OVERVIEW
+              PROGRESS + BREAKDOWN
           ================================= */}
 
-          <div className="budget-overview-grid">
+          <div className="budget-content-grid">
 
-            <div className="budget-stat-card">
 
-              <span>
-                🎯 Total Budget
-              </span>
+            {/* PROGRESS */}
 
-              <strong>
-                {formatMoney(
-                  budget
-                )}
-              </strong>
+            <div className="modern-card">
+
+              <div className="card-section-title">
+                📈 Budget Progress
+              </div>
+
+              <div className="budget-progress-big">
+
+                <div
+                  className={`budget-progress-big-fill ${
+                    percentage >= 100
+                      ? "danger"
+                      : percentage >= 80
+                      ? "warning"
+                      : ""
+                  }`}
+                  style={{
+                    width:
+                      `${percentage}%`,
+                  }}
+                />
+
+              </div>
+
+              <div className="budget-progress-info">
+
+                <div>
+
+                  <strong>
+                    {percentage.toFixed(0)}%
+                  </strong>
+
+                  <span>
+                    of your budget used
+                  </span>
+
+                </div>
+
+                <div>
+
+                  <strong>
+                    {formatMoney(
+                      totalSpending
+                    )}
+                  </strong>
+
+                  <span>
+                    spent
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              {budget === 0 ? (
+
+                <div className="budget-message neutral">
+                  Set your budget to start tracking.
+                </div>
+
+              ) : overBudget > 0 ? (
+
+                <div className="budget-message danger">
+                  🚨 You're{" "}
+                  <strong>
+                    {formatMoney(
+                      overBudget
+                    )}
+                  </strong>{" "}
+                  over your budget.
+                </div>
+
+              ) : percentage >= 80 ? (
+
+                <div className="budget-message warning">
+                  ⚠️ You're getting close to your
+                  budget limit.
+                </div>
+
+              ) : (
+
+                <div className="budget-message success">
+                  ✅ You're within budget! You have{" "}
+                  <strong>
+                    {formatMoney(
+                      remainingBudget
+                    )}
+                  </strong>{" "}
+                  left.
+                </div>
+
+              )}
 
             </div>
 
 
-            <div className="budget-stat-card">
+            {/* SPENDING BREAKDOWN */}
 
-              <span>
-                💸 Total Spending
-              </span>
+            <div className="modern-card">
 
-              <strong>
-                {formatMoney(
-                  totalSpending
-                )}
-              </strong>
+              <div className="card-section-title">
+                💸 Spending Breakdown
+              </div>
 
-              <small>
-                Expenses + planned activities
-              </small>
+              <div className="breakdown-row">
 
-            </div>
-
-
-            <div className="budget-stat-card">
-
-              <span>
-                💰 Remaining
-              </span>
-
-              <strong>
-                {formatMoney(
-                  remainingBudget
-                )}
-              </strong>
-
-            </div>
-
-          </div>
-
-
-          {/* =================================
-              SPENDING BREAKDOWN
-          ================================= */}
-
-          <div className="page-card">
-
-            <h2>
-              💸 Spending Breakdown
-            </h2>
-
-
-            <div className="budget-breakdown-grid">
-
-              <div>
-
-                <span>
-                  🧾 Actual Expenses
-                </span>
+                <div>
+                  <span>
+                    🧾 Actual Expenses
+                  </span>
+                </div>
 
                 <strong>
                   {formatMoney(
@@ -561,12 +605,32 @@ function Budget() {
 
               </div>
 
+              <div className="mini-progress">
 
-              <div>
+                <div
+                  style={{
+                    width:
+                      totalSpending > 0
+                        ? `${Math.min(
+                            (expenseSpending /
+                              totalSpending) *
+                              100,
+                            100
+                          )}%`
+                        : "0%",
+                  }}
+                />
 
-                <span>
-                  🗓️ Planned Activities
-                </span>
+              </div>
+
+
+              <div className="breakdown-row">
+
+                <div>
+                  <span>
+                    🗓️ Planned Activities
+                  </span>
+                </div>
 
                 <strong>
                   {formatMoney(
@@ -576,11 +640,29 @@ function Budget() {
 
               </div>
 
+              <div className="mini-progress">
 
-              <div>
+                <div
+                  style={{
+                    width:
+                      totalSpending > 0
+                        ? `${Math.min(
+                            (itineraryCost /
+                              totalSpending) *
+                              100,
+                            100
+                          )}%`
+                        : "0%",
+                  }}
+                />
+
+              </div>
+
+
+              <div className="breakdown-total">
 
                 <span>
-                  💰 Total
+                  💰 Total Spending
                 </span>
 
                 <strong>
@@ -597,137 +679,31 @@ function Budget() {
 
 
           {/* =================================
-              PROGRESS
+              CATEGORY
           ================================= */}
 
-          <div className="page-card">
+          <div className="modern-card">
 
-            <div className="section-heading">
-
-              <div>
-
-                <h2>
-                  📈 Budget Progress
-                </h2>
-
-                <span>
-                  {percentage.toFixed(0)}%
-                  {" "}of your budget used
-                </span>
-
-              </div>
-
-
-              <strong>
-                {formatMoney(
-                  totalSpending
-                )}
-              </strong>
-
-            </div>
-
-
-            <div className="budget-progress">
-
-              <div
-                className={`budget-progress-bar ${
-                  percentage >= 100
-                    ? "over"
-                    : percentage >= 80
-                    ? "warning"
-                    : ""
-                }`}
-                style={{
-                  width:
-                    `${percentage}%`,
-                }}
-              />
-
-            </div>
-
-
-            {budget === 0 ? (
-
-              <p className="budget-status">
-
-                Set your budget above
-                to start tracking.
-
-              </p>
-
-            ) : overBudget > 0 ? (
-
-              <div className="budget-warning">
-
-                🚨 You are{" "}
-
-                <strong>
-                  {formatMoney(
-                    overBudget
-                  )}
-                </strong>
-
-                {" "}over your budget.
-
-              </div>
-
-            ) : percentage >= 80 ? (
-
-              <div className="budget-warning">
-
-                ⚠️ You're getting close
-                to your budget limit.
-
-              </div>
-
-            ) : (
-
-              <div className="budget-good">
-
-                ✅ You're within your
-                budget!
-
-                {" "}You have{" "}
-
-                <strong>
-                  {formatMoney(
-                    remainingBudget
-                  )}
-                </strong>
-
-                {" "}left.
-
-              </div>
-
-            )}
-
-          </div>
-
-
-          {/* =================================
-              CATEGORY BREAKDOWN
-          ================================= */}
-
-          <div className="page-card">
-
-            <h2>
+            <div className="card-section-title">
               📊 Spending by Category
-            </h2>
-
+            </div>
 
             {Object.keys(
               categoryTotals
             ).length === 0 ? (
 
-              <div className="empty-page">
+              <div className="modern-empty">
+
+                <div>
+                  💰
+                </div>
 
                 <h3>
-                  No spending yet 💰
+                  No spending yet
                 </h3>
 
                 <p>
-                  Add expenses or itinerary
-                  activities to see your
+                  Add expenses to see your
                   spending breakdown.
                 </p>
 
@@ -735,7 +711,7 @@ function Budget() {
 
             ) : (
 
-              <div className="budget-category-list">
+              <div className="category-modern-list">
 
                 {Object.entries(
                   categoryTotals
@@ -743,37 +719,58 @@ function Budget() {
                   ([category, amount]) => {
 
                     const categoryPercentage =
-                      totalSpending > 0
+                      expenseSpending > 0
                         ? (
                             amount /
-                            totalSpending
+                            expenseSpending
                           ) *
                           100
                         : 0;
 
-
                     return (
 
                       <div
-                        className="budget-category-item"
+                        className="category-modern-item"
                         key={category}
                       >
 
-                        <div>
-
-                          <strong>
-                            {category}
-                          </strong>
+                        <div className="category-name">
 
                           <span>
-                            {categoryPercentage.toFixed(
-                              0
-                            )}
-                            % of spending
+                            {category ===
+                            "Food"
+                              ? "🍴"
+                              : category ===
+                                "Accommodation"
+                              ? "🏨"
+                              : category ===
+                                "Transport"
+                              ? "🚕"
+                              : category ===
+                                "Activities"
+                              ? "🎟️"
+                              : category ===
+                                "Shopping"
+                              ? "🛍️"
+                              : "💳"}
                           </span>
 
-                        </div>
+                          <div>
 
+                            <strong>
+                              {category}
+                            </strong>
+
+                            <small>
+                              {categoryPercentage.toFixed(
+                                0
+                              )}
+                              % of expenses
+                            </small>
+
+                          </div>
+
+                        </div>
 
                         <strong>
                           {formatMoney(
@@ -796,189 +793,157 @@ function Budget() {
 
 
           {/* =================================
-              ITINERARY SUMMARY
+              RECENT EXPENSES + ITINERARY
           ================================= */}
 
-          <div className="page-card">
+          <div className="budget-content-grid">
 
-            <div className="section-heading">
 
-              <div>
+            {/* RECENT EXPENSES */}
 
-                <h2>
-                  🗓️ Planned Activities
-                </h2>
+            <div className="modern-card">
 
-                <span>
-                  {itinerary.length}{" "}
-                  {itinerary.length === 1
-                    ? "activity"
-                    : "activities"}
+              <div className="card-title-row">
+
+                <div className="card-section-title">
+                  🧾 Recent Expenses
+                </div>
+
+                <span className="count-pill">
+                  {expenses.length}
                 </span>
 
               </div>
 
+              {expenses.length === 0 ? (
 
-              <strong>
-                {formatMoney(
-                  itineraryCost
-                )}
-              </strong>
+                <div className="small-empty">
+                  No expenses yet.
+                </div>
 
-            </div>
+              ) : (
 
+                <div className="modern-list">
 
-            {itinerary.length === 0 ? (
+                  {expenses
+                    .slice()
+                    .reverse()
+                    .slice(0, 5)
+                    .map(
+                      (expense) => (
 
-              <div className="empty-page">
+                        <div
+                          className="modern-list-item"
+                          key={expense.id}
+                        >
 
-                <p>
-                  No planned activities yet.
-                </p>
+                          <div>
 
-              </div>
+                            <strong>
+                              {expense.description}
+                            </strong>
 
-            ) : (
+                            <span>
+                              {expense.category}
+                            </span>
 
-              <div className="budget-expense-list">
-
-                {itinerary
-                  .slice()
-                  .reverse()
-                  .slice(0, 5)
-                  .map(
-                    (item) => (
-
-                      <div
-                        className="budget-expense-item"
-                        key={item.id}
-                      >
-
-                        <div>
+                          </div>
 
                           <strong>
-                            {item.activity}
-                          </strong>
-
-                          <span>
-                            📍{" "}
-                            {item.location}
-                          </span>
-
-                        </div>
-
-
-                        <strong>
-                          {Number(
-                            item.cost || 0
-                          ) > 0
-                            ? formatMoney(
-                                Number(
-                                  item.cost
-                                )
+                            {formatMoney(
+                              Number(
+                                expense.amount ||
+                                0
                               )
-                            : "Free"}
-                        </strong>
+                            )}
+                          </strong>
 
-                      </div>
+                        </div>
 
-                    )
-                  )}
+                      )
+                    )}
 
-              </div>
+                </div>
 
-            )}
-
-          </div>
-
-
-          {/* =================================
-              RECENT EXPENSES
-          ================================= */}
-
-          <div className="page-card">
-
-            <div className="section-heading">
-
-              <h2>
-                🧾 Recent Expenses
-              </h2>
-
-              <span>
-                {expenses.length}{" "}
-                expense
-                {expenses.length !== 1
-                  ? "s"
-                  : ""}
-              </span>
+              )}
 
             </div>
 
 
-            {expenses.length === 0 ? (
+            {/* PLANNED */}
 
-              <div className="empty-page">
+            <div className="modern-card">
 
-                <h3>
-                  No expenses yet
-                </h3>
+              <div className="card-title-row">
 
-                <p>
-                  Add expenses from the
-                  Expenses page.
-                </p>
+                <div className="card-section-title">
+                  🗓️ Planned Activities
+                </div>
+
+                <span className="count-pill">
+                  {itinerary.length}
+                </span>
 
               </div>
 
-            ) : (
+              {itinerary.length === 0 ? (
 
-              <div className="budget-expense-list">
+                <div className="small-empty">
+                  No planned activities yet.
+                </div>
 
-                {expenses
-                  .slice()
-                  .reverse()
-                  .slice(0, 5)
-                  .map(
-                    (expense) => (
+              ) : (
 
-                      <div
-                        className="budget-expense-item"
-                        key={expense.id}
-                      >
+                <div className="modern-list">
 
-                        <div>
+                  {itinerary
+                    .slice()
+                    .reverse()
+                    .slice(0, 5)
+                    .map(
+                      (item) => (
+
+                        <div
+                          className="modern-list-item"
+                          key={item.id}
+                        >
+
+                          <div>
+
+                            <strong>
+                              {item.activity}
+                            </strong>
+
+                            <span>
+                              📍 {item.location}
+                            </span>
+
+                          </div>
 
                           <strong>
-                            {expense.description}
+                            {Number(
+                              item.cost || 0
+                            ) > 0
+                              ? formatMoney(
+                                  Number(
+                                    item.cost
+                                  )
+                                )
+                              : "Free"}
                           </strong>
-
-                          <span>
-                            {expense.category}
-                          </span>
 
                         </div>
 
+                      )
+                    )}
 
-                        <strong>
-                          {formatMoney(
-                            Number(
-                              expense.amount ||
-                              0
-                            )
-                          )}
-                        </strong>
+                </div>
 
-                      </div>
+              )}
 
-                    )
-                  )}
-
-              </div>
-
-            )}
+            </div>
 
           </div>
-
 
         </main>
 
@@ -987,7 +952,6 @@ function Budget() {
     </div>
 
   );
-
 }
 
 export default Budget;
